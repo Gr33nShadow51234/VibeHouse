@@ -23,6 +23,8 @@ local StatsModule = require(game.ReplicatedStorage.Modules:WaitForChild("StatsMo
 local UpdateData = ReplicatedStorage.Events.UpdateData
 local Clicked = ReplicatedStorage.Events.Clicked
 local Sell = ReplicatedStorage.Events.Sell
+local BuyAll = ReplicatedStorage.Events.BuyAll
+local Clicked = ReplicatedStorage.Events.Clicked
 local data = UpdateData:InvokeServer()
 local backpack = ReplicatedStorage.ShopItems.Backpacks:FindFirstChild(data.Backpack)
 local delay = 0.6 if data.Gamepasses.QuickClick then delay = 0.3 end
@@ -86,7 +88,7 @@ mainTab:Toggle{
 	Callback = function(state)
     _G.Swing = state
         while _G.Swing and task.wait(.05) do
-            game:GetService("ReplicatedStorage").Events.Clicked:FireServer()
+            Clicked:FireServer()
         end
     end
 }
@@ -99,8 +101,7 @@ mainTab:Toggle{
 	Callback = function(state)
         _G.BuyAll = state
         while _G.BuyAll and task.wait(6) do
-            local args = {[1] = "Swords"}
-            game:GetService("ReplicatedStorage").Events.BuyAll:FireServer(unpack(args))
+            BuyAll:FireServer("Swords")
         end
     end
 }

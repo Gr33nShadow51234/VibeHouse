@@ -6,12 +6,10 @@ for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
     v:Disable()
 end
 
-
 _G.Swing = false
 _G.BuyAll = false
 _G.AttackBoss = false
 _G.Loop = false
-
 
 local a = require(game:GetService("Players").LocalPlayer.PlayerGui.Gui.LocalScript.Locations) a.CheckInArena = function() return true end
 local b = require(game:GetService("Players").LocalPlayer.PlayerGui.Gui.LocalScript.Extra)
@@ -25,7 +23,6 @@ local Clicked = ReplicatedStorage.Events.Clicked
 local Sell = ReplicatedStorage.Events.Sell
 local BuyAll = ReplicatedStorage.Events.BuyAll
 local Clicked = ReplicatedStorage.Events.Clicked
-
 
 if player.Character ~= nil then
     if player.Character:FindFirstChild("AntiPort") then
@@ -77,7 +74,6 @@ local mainTab = GUI:Tab{
 	Icon = "rbxassetid://9741693218"
 }
 
-
 mainTab:Toggle{
 	Name = "Auto Swing",
 	StartingState = _G.Swing,
@@ -90,7 +86,6 @@ mainTab:Toggle{
     end
 }
 
-
 mainTab:Toggle{
 	Name = "Auto Buy All Sabers",
 	StartingState = _G.BuyAll,
@@ -102,7 +97,6 @@ mainTab:Toggle{
         end
     end
 }
-
 
 mainTab:Toggle{
 	Name = "Kill Boss",
@@ -133,7 +127,6 @@ mainTab:Toggle{
     end
 }
 
-
 mainTab:Toggle{
 	Name = "Farm Candy",
 	StartingState = _G.Loop,
@@ -163,6 +156,20 @@ mainTab:Toggle{
     end
 }
 
+mainTab:Button{
+	Name = "Sell Amount",
+	Description = nil,
+	Callback = function()
+        local c = game.ReplicatedStorage.Events.UpdateData:InvokeServer()
+
+        GUI:Notification{
+            Title = "Sell Amount",
+            Text = b.ShorterNumber(c.Strength * StatsModule.getSellMulti(game.Players.LocalPlayer,c)),
+            Duration = 5,
+            Callback = function() end
+        }
+    end
+}
 
 GUI:Notification{
 	Title = "Notification!",

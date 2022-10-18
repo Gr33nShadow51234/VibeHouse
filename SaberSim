@@ -100,7 +100,7 @@ mainTab:Toggle{
 	Description = nil,
 	Callback = function(state)
         _G.BuyAll = state
-        while _G.BuyAll and task.wait(6) do
+        while _G.BuyAll and task.wait(2) do
             BuyAll:FireServer("Swords")
         end
     end

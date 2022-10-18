@@ -25,9 +25,6 @@ local Clicked = ReplicatedStorage.Events.Clicked
 local Sell = ReplicatedStorage.Events.Sell
 local BuyAll = ReplicatedStorage.Events.BuyAll
 local Clicked = ReplicatedStorage.Events.Clicked
-local data = UpdateData:InvokeServer()
-local backpack = ReplicatedStorage.ShopItems.Backpacks:FindFirstChild(data.Backpack)
-local delay = 0.6 if data.Gamepasses.QuickClick then delay = 0.3 end
 
 
 if player.Character ~= nil then
@@ -165,6 +162,7 @@ mainTab:Toggle{
         end
     end
 }
+
 
 GUI:Notification{
 	Title = "Notification!",

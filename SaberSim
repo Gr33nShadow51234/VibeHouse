@@ -214,3 +214,13 @@ GUI:Notification{
 	Duration = 8,
 	Callback = function() end
 }
+
+GUI:Credit{
+	Name = "ImperatorWeeds",
+	Description = "Made 3/4 of the Scripts",
+	V3rm = "https://v3rmillion.net/member.php?action=profile&uid=1337989",
+	Discord = "ImperatorWeeds#8893"
+}
+
+warn("Scripts made by ImperatorWeeds")
+warn("UI by Floppa")

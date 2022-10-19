@@ -69,6 +69,8 @@ local GUI = Mercury:Create{
     Link = "https://vibehouse.de/"
 }
 
+-- Main Tab --
+
 local mainTab = GUI:Tab{
 	Name = "Main",
 	Icon = "rbxassetid://9741693218"
@@ -92,7 +94,7 @@ mainTab:Toggle{
 	Description = nil,
 	Callback = function(state)
         _G.BuyAll = state
-        while _G.BuyAll and task.wait(2) do
+        while _G.BuyAll and task.wait(5) do
             BuyAll:FireServer("Swords")
         end
     end
@@ -170,6 +172,28 @@ mainTab:Button{
         }
     end
 }
+-- Misc Tab--
+
+local miscTab = GUI:Tab{
+	Name = "misc",
+	Icon = nil
+}
+
+miscTab:Button{
+	Name = "TP Last Island",
+	Description = nil,
+	Callback = function()
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(787.90, 524258.625, -339.313)
+    end
+}
+miscTab:Button{
+	Name = "TP Shop",
+	Description = nil,
+	Callback = function()
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(471.650, 184.501, 50.5950)
+    end
+}
+-- Notification --
 
 GUI:Notification{
 	Title = "Notification!",

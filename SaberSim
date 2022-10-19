@@ -94,11 +94,24 @@ mainTab:Toggle{
 	Description = nil,
 	Callback = function(state)
         _G.BuyAll = state
-        while _G.BuyAll and task.wait(5) do
+        while _G.BuyAll and task.wait(4) do
             BuyAll:FireServer("Swords")
         end
     end
 }
+
+mainTab:Toggle{
+	Name = "Auto Buy All DNA",
+	StartingState = _G.BuyAll,
+	Description = nil,
+	Callback = function(state)
+        _G.BuyAll = state
+        while _G.BuyAll and task.wait(4) do
+            BuyAll:FireServer("Backpacks")
+        end
+    end
+}
+
 
 mainTab:Toggle{
 	Name = "Kill Boss",

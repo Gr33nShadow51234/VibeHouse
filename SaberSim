@@ -38,27 +38,6 @@ player.CharacterAdded:Connect(function(char)
     char:WaitForChild("AntiPortNew", math.huge):Remove()
 end)
 
-b.ShorterNumber = function(number)
-    local abbreviations = {
-        MF = 10^162; ME = 10^159; MD = 10^156; MC = 10^153; MB = 10^150; MA = 10^147; kZ = 10^144; kY = 10^141; kX = 10^138; kW = 10^135; kV = 10^132; kU = 10^129; kT = 10^126; kS = 10^123; kR = 10^120; kQ = 10^117; kP = 10^114;kO = 10^111; kN = 10^108; kM = 10^105; kL = 10^102; kK = 10^99; kJ = 10^96; kI = 10^93; kH = 10^90; kG = 10^87; kF = 10^84;kE = 10^81; kD = 10^78; kC = 10^75; kB = 10^72; kA = 10^69; c = 10^66; v = 10^63; N = 10^60; O = 10^57; St = 10^54; Sd = 10^51; Qd = 10^48; Qt = 10^45; T = 10^42; D = 10^39; U = 10^36; d = 10^33; n = 10^30; o = 10^27; S = 10^24; s = 10^21; Q = 10^18; q = 10^15; t = 10^12; B = 10^9; M = 10^6; K = 10^3
-    }
-
-    local abbreviatedNum = number
-    local abbreviationChosen = 0
-
-    for abbreviation, num in pairs(abbreviations) do
-        if number >= num and num > abbreviationChosen then
-            local shortNum = number / num
-            local intNum = math.floor(shortNum * 1000)
-            local finalNum = intNum / 1000
-            
-            abbreviatedNum = tostring(finalNum) .. abbreviation
-            abbreviationChosen = num
-        end
-    end
-
-    return abbreviatedNum
-end
 
 local Mercury = loadstring(game:HttpGet("https://raw.githubusercontent.com/Gr33nShadow51234/Glizzy/main/Mercury"))()
 

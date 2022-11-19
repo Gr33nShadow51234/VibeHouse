@@ -175,7 +175,7 @@ miscTab:Button{
 	Name = "TP Last Island",
 	Description = nil,
 	Callback = function()
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(782.90, 527862.625, -339.313)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(785, 531453, -336)
     end
 }
 miscTab:Button{

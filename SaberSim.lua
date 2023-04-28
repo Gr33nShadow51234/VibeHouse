@@ -182,7 +182,7 @@ miscTab:Button{
 	Name = "TP Shop",
 	Description = nil,
 	Callback = function()
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(471.650, 184.501, 50.5950)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(788, 560601, -326)
     end
 }
 -- Notification --

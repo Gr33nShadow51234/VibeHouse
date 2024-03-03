@@ -4,6 +4,7 @@ for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
     v:Disable()
 end
 
+
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
@@ -30,7 +31,9 @@ local CubeRarity = {"Legendary","Epic","Rare","Common"}
 local PetTable = require(game:GetService("ReplicatedStorage").Shared.Data.Pets)
 local nearest_table = {}
 local Invoke = game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Function")
-
+local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
+local BossAreas = workspace.Bosses
+local Bosses = {"king-slime","the-kraken"}
 
 -- Functions
 function find_nearest_enemy()
@@ -96,6 +99,22 @@ function get_highest_ball()
     end
     return highest_rarity, amount
 end
+function canDoBoss()
+    if not BossStuff.Current then return true end
+    if not BossStuff.Current.State then return true end
+    if BossStuff.Current.State.BossDied == true then
+        return true
+    end
+    if BossStuff.Current.State.Finishing == true then
+        return false, BossStuff.Current.State.Health, BossStuff.Current.State.MaxHealth
+    end
+    
+    return false, BossStuff.Current.State.Health, BossStuff.Current.State.MaxHealth
+end
+
+
+
+
 -- Tabs
 local Tabs = {
     ['Main'] = Window:AddTab('Main'),
@@ -197,6 +216,43 @@ FishBox:AddToggle('AutoFishSell', {
     Callback = function(Value)
     end
 })
+MobsBox:AddSlider('BossHPBar', {
+    Text = 'HP',
+    Default = 0,
+    Min = 0,
+    Max = 0,
+    Rounding = 0,
+    Compact = true,
+
+    Callback = function(Value)
+    end
+})
+
+MobsBox:AddToggle('AutoBoss', {
+    Text = 'Auto Boss',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+MobsBox:AddToggle('RespawnKraken', {
+    Text = 'Respawn Kraken',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+MobsBox:AddToggle('RespawnSlime', {
+    Text = 'Respawn Slime',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
 
 MobsBox:AddToggle('TPMobs', {
     Text = 'TP to Mobs',
@@ -216,18 +272,10 @@ MobsBox:AddToggle('Godmode', {
     end
 })
 
-MobsBox:AddToggle('SlimeGodmode', {
-    Text = 'Slime Godmode',
+MobsBox:AddToggle('BossGodmode', {
+    Text = 'Boss Godmode',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Only for Slime', -- Information shown when you hover over the toggle
-
-    Callback = function(Value)
-    end
-})
-MobsBox:AddToggle('KrakenGodmode', {
-    Text = 'Kraken Godmode',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'Only for Kraken', -- Information shown when you hover over the toggle
+    Tooltip = 'Only for Bosses', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -240,9 +288,6 @@ MinigameBox:AddToggle('DigSite', {
     Callback = function(Value)
     end
 })
-
-
-
 
 table.insert(Threads, task.spawn(function() --Godmode
     while task.wait() do
@@ -279,7 +324,7 @@ table.insert(Threads, task.spawn(function() --Godmode
                     Cube = get_highest_ball()
                 end
                 print(Cube)
-                    success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
+                --success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
                 task.wait()
             until success or Pet.Model == nil or Toggles.AutoCatch.Value == false
 
@@ -348,18 +393,53 @@ table.insert(Threads, task.spawn(function() --SlimeGodmode
 end))
 table.insert(Threads, task.spawn(function() --SlimeGodmode
     while task.wait() do
-        if Toggles.SlimeGodmode.Value then
-            if workspace.Rendered:FindFirstChild("King Slime") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered["King Slime"].PrimaryPart.CFrame * CFrame.new(0, 16, -15)
+        if Toggles.AutoBoss.Value then
+            for i,v in Bosses do
+                local State, CurrentHP, MaxHP = canDoBoss()
+                if State then
+                    if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
+                    if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
+                    task.wait(.1)
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+                    task.wait(3)
+                    break
+            
+                elseif not State then
+                    Options.BossHPBar.Max = MaxHP
+                    Options.BossHPBar.Value = CurrentHP
+                    Options.BossHPBar:Display()
+                    break
+                end
             end
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --KrakenGodmode
+table.insert(Threads, task.spawn(function() --BossGodmode
     while task.wait() do
-        if Toggles.SlimeGodmode.Value then
-            if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken"):FindFirstChild("Area") then
+        if Toggles.BossGodmode.Value then
+            if workspace.Rendered:FindFirstChild("King Slime") then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered["King Slime"].PrimaryPart.CFrame * CFrame.new(0, 16, -15)
+            elseif workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken"):FindFirstChild("Area") then
                 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered.Generic.Kraken.Area.CFrame * CFrame.new(-280, 50, 300)
+            end
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --RespawnKraken
+    while task.wait() do
+        if Toggles.RespawnKraken.Value then
+            if workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then 
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("RespawnBoss","the-kraken")                
+            end
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --RespawnSlime
+    while task.wait() do
+        if Toggles.RespawnSlime.Value then
+            if workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then 
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("RespawnBoss","king-slime")                
             end
         end
     end
@@ -412,5 +492,7 @@ local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 -- I set NoUI so it does not show up in the keybinds menu
 MenuGroup:AddButton('Unload', function() Library:Unload() 
 end)
+
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })

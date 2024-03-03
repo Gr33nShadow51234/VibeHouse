@@ -4,13 +4,12 @@ for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
     v:Disable()
 end
 
-
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 
 local Window = Library:CreateWindow({
-    Title = 'Pet Catchers by Pryxo',
+    Title = 'Pet Catchers by 🐟',
     Center = true,
     AutoShow = true,
     TabPadding = 8,
@@ -211,7 +210,7 @@ FishBox:AddToggle('AutoFish', {
 FishBox:AddToggle('AutoFishSell', {
     Text = 'Auto Sell',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Use rod for you', -- Information shown when you hover over the toggle
+    Tooltip = 'Sells 🐟', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -257,7 +256,7 @@ MobsBox:AddToggle('RespawnSlime', {
 MobsBox:AddToggle('TPMobs', {
     Text = 'TP to Mobs',
     Default = false, -- Default value (true / false)
-    Tooltip = 'teleport to mobs', -- Information shown when you hover over the toggle
+    Tooltip = 'Teleport to mobs', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -266,7 +265,7 @@ MobsBox:AddToggle('TPMobs', {
 MobsBox:AddToggle('Godmode', {
     Text = 'Godmode',
     Default = false, -- Default value (true / false)
-    Tooltip = 'God', -- Information shown when you hover over the toggle
+    Tooltip = 'Literally God', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -283,7 +282,7 @@ MobsBox:AddToggle('BossGodmode', {
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
-    Tooltip = 'REJOIN AFTER USE', -- Information shown when you hover over the toggle
+    Tooltip = '', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -493,6 +492,4 @@ local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 MenuGroup:AddButton('Unload', function() Library:Unload() 
 end)
 
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
-
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' })

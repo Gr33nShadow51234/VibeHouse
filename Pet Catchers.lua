@@ -274,7 +274,7 @@ table.insert(Threads, task.spawn(function() --Godmode
                     Cube = get_highest_ball()
                 end
                 print(Cube)
-                --success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
+                    success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
                 task.wait()
             until success or Pet.Model == nil or Toggles.AutoCatch.Value == false
 

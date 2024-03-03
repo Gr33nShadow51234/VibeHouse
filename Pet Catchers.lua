@@ -1,3 +1,8 @@
+--------Anti AFK--------
+if not game:IsLoaded() then game.Loaded:Wait() end
+for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
+    v:Disable()
+end
 
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 

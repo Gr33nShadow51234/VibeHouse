@@ -822,8 +822,6 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 
                 InsideMinigame = true
 
-                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
-
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)

@@ -561,8 +561,8 @@ table.insert(Threads, task.spawn(function() --AutoCatch
 
                 success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
                 task.wait()
-            until success or Pet.Model == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
-
+            until success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
+            Pet.Model:Destroy()
             --Pet.Model.PrimaryPart.Transparency = old1
             --Pet.Model.PrimaryPart.Color = old2
 

@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-local Debug = false
+local Debug = true
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
@@ -164,6 +164,7 @@ function set_boss_page(page)
 end
 
 
+
 -- Tabs
 local Tabs = {
     ['Main'] = Window:AddTab('Main'),
@@ -182,7 +183,6 @@ local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
-
 -- toggles
 GeneralBox:AddToggle('AutoCollect', {
     Text = 'Auto Collect',
@@ -409,7 +409,6 @@ CraftSlot2:AddDropdown('SelectRecipe2', {
     Callback = function(Value)
     end
 })
-
 CraftSlot2:AddSlider('SelectAmount2', {
     Text = 'Select Amount',
     Default = 1,
@@ -422,7 +421,6 @@ CraftSlot2:AddSlider('SelectAmount2', {
         print('[cb] MySlider was changed! New value:', Value)
     end
 })
-
 CraftSlot2:AddToggle('AutoCraftClaim2', {
     Text = 'Craft & Claim',
     Default = false, -- Default value (true / false)
@@ -443,7 +441,6 @@ CraftSlot3:AddDropdown('SelectRecipe3', {
     Callback = function(Value)
     end
 })
-
 CraftSlot3:AddSlider('SelectAmount3', {
     Text = 'Select Amount',
     Default = 1,
@@ -456,7 +453,6 @@ CraftSlot3:AddSlider('SelectAmount3', {
         print('[cb] MySlider was changed! New value:', Value)
     end
 })
-
 CraftSlot3:AddToggle('AutoCraftClaim3', {
     Text = 'Craft & Claim',
     Default = false, -- Default value (true / false)
@@ -476,7 +472,6 @@ table.insert(Threads, task.spawn(function() --AutoCollect
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoCatch
     while task.wait() do
         if Toggles.AutoCatch.Value then
@@ -519,10 +514,10 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                 end
             end
 
-            local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
+            --local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
 
-            Pet.Model.PrimaryPart.Transparency = 0.2
-            Pet.Model.PrimaryPart.Color = Color3.new(0,0,0)
+            --Pet.Model.PrimaryPart.Transparency = 0.2
+            --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
 
             repeat
                 if table.find(PetRarity, Rarity) <= 2 then
@@ -532,8 +527,8 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                 task.wait()
             until success or Pet.Model == nil or Toggles.AutoCatch.Value == false
 
-            Pet.Model.PrimaryPart.Transparency = old1
-            Pet.Model.PrimaryPart.Color = old2
+            --Pet.Model.PrimaryPart.Transparency = old1
+            --Pet.Model.PrimaryPart.Color = old2
 
             if Debug then
                 print("GOTCHA")
@@ -541,7 +536,6 @@ table.insert(Threads, task.spawn(function() --AutoCatch
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoCraftClaim1
     while task.wait() do
         if Toggles.AutoCraftClaim1.Value then
@@ -557,7 +551,6 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim1
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoCraftClaim2
     while task.wait() do
         if Toggles.AutoCraftClaim2.Value then
@@ -573,7 +566,6 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim2
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoCraftClaim3
     while task.wait() do
         if Toggles.AutoCraftClaim3.Value then
@@ -589,7 +581,6 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim3
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --Godmode
     while task.wait() do
         if Toggles.Godmode.Value then
@@ -597,7 +588,6 @@ table.insert(Threads, task.spawn(function() --Godmode
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoOpen
     while task.wait() do
         if Toggles.AutoOpen.Value then
@@ -606,7 +596,6 @@ table.insert(Threads, task.spawn(function() --AutoOpen
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoFish
     while task.wait() do
         if Toggles.AutoFish.Value then
@@ -616,7 +605,6 @@ table.insert(Threads, task.spawn(function() --AutoFish
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoFishSell
     while task.wait() do
         if Toggles.AutoFishSell.Value then
@@ -624,7 +612,6 @@ table.insert(Threads, task.spawn(function() --AutoFishSell
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoShrines
     while task.wait() do
         if Toggles.AutoShrines.Value then
@@ -639,7 +626,6 @@ table.insert(Threads, task.spawn(function() --AutoShrines
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --TPMobs
     while task.wait() do
         if Toggles.TPMobs.Value then
@@ -650,7 +636,6 @@ table.insert(Threads, task.spawn(function() --TPMobs
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
         if Toggles.AutoBoss.Value then
@@ -698,7 +683,6 @@ table.insert(Threads, task.spawn(function() --AutoBoss
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --BossGodmode
     while task.wait() do
         if Toggles.BossGodmode.Value then
@@ -711,7 +695,6 @@ table.insert(Threads, task.spawn(function() --BossGodmode
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --RespawnKraken
     while task.wait() do
         if Toggles.RespawnKraken.Value then
@@ -721,7 +704,6 @@ table.insert(Threads, task.spawn(function() --RespawnKraken
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --RespawnSlime
     while task.wait() do
         if Toggles.RespawnSlime.Value then
@@ -731,44 +713,56 @@ table.insert(Threads, task.spawn(function() --RespawnSlime
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --AutoDigSite
     while task.wait() do
         if Toggles.DigSite.Value then
             local State, CurrentHP, MaxHP = canDoBoss()
 
-            if not State then continue end
+            --if State then continue end
+            if not Toggles.DigSite.Value then break end
 
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
-                for i,v in workspace.Rendered.Generic:GetChildren() do
-                    if v:IsA("Part") and v.Name == "Glow" then
-                        local nearest, nearest_distance = nil, math.huge
-                        for i2,v2 in workspace.Map["Dusty Dunes"].Excavation.Tiles:GetChildren() do
-                            local dist = (v.Position - v2.Position).Magnitude
+                repeat 
+                    for i,v in workspace.Rendered.Generic:GetChildren() do
+                        if v:IsA("Part") and v.Name == "Glow" then
+                            local nearest, nearest_distance = nil, math.huge
+                            for i2,v2 in workspace.Map["Dusty Dunes"].Excavation.Tiles:GetChildren() do
+                                local dist = (v.Position - v2.Position).Magnitude
+                                
+                                if dist > nearest_distance then continue end
+                                nearest = v2
+                                nearest_distance = dist
+                            end
+                
+                            if table.find(nearest_table, nearest) then continue end
                             
-                            if dist > nearest_distance then continue end
-                            nearest = v2
-                            nearest_distance = dist
+                            table.insert(nearest_table, nearest)
                         end
-            
-                        if table.find(nearest_table, nearest) then continue end
-                        
-                        table.insert(nearest_table, nearest)
                     end
-                end
-            
-                for _,v in nearest_table do
-                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("TryMinigameInput",tostring(v))    
-                end
+
+                    for _,v in nearest_table do
+                        game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("TryMinigameInput",tostring(v))    
+                    end
+                    task.wait()
+
+                until not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible
+
+                repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible 
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                task.wait(2)
+                print("FINISHED GAME!!!")
+
             else
                 nearest_table = {}
-                
+
                 if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.HUD.Visible then continue end
+                if not Toggles.DigSite.Value then break end
 
                 if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                     task.wait(2)
                 end
+                if not Toggles.DigSite.Value then break end
 
                 if DataSave.GoldenTickets == 0 then continue end
                 local BestPet = get_minigame_pet()
@@ -777,6 +771,7 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                     print(get_minigame_pet())
                 end
 
+                if not Toggles.DigSite.Value then break end
                 fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)

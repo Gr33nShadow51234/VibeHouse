@@ -164,7 +164,6 @@ function set_boss_page(page)
 end
 
 
-
 -- Tabs
 local Tabs = {
     ['Main'] = Window:AddTab('Main'),
@@ -183,6 +182,7 @@ local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
+
 -- toggles
 GeneralBox:AddToggle('AutoCollect', {
     Text = 'Auto Collect',
@@ -409,6 +409,7 @@ CraftSlot2:AddDropdown('SelectRecipe2', {
     Callback = function(Value)
     end
 })
+
 CraftSlot2:AddSlider('SelectAmount2', {
     Text = 'Select Amount',
     Default = 1,
@@ -421,6 +422,7 @@ CraftSlot2:AddSlider('SelectAmount2', {
         print('[cb] MySlider was changed! New value:', Value)
     end
 })
+
 CraftSlot2:AddToggle('AutoCraftClaim2', {
     Text = 'Craft & Claim',
     Default = false, -- Default value (true / false)
@@ -441,6 +443,7 @@ CraftSlot3:AddDropdown('SelectRecipe3', {
     Callback = function(Value)
     end
 })
+
 CraftSlot3:AddSlider('SelectAmount3', {
     Text = 'Select Amount',
     Default = 1,
@@ -453,6 +456,7 @@ CraftSlot3:AddSlider('SelectAmount3', {
         print('[cb] MySlider was changed! New value:', Value)
     end
 })
+
 CraftSlot3:AddToggle('AutoCraftClaim3', {
     Text = 'Craft & Claim',
     Default = false, -- Default value (true / false)
@@ -472,6 +476,7 @@ table.insert(Threads, task.spawn(function() --AutoCollect
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoCatch
     while task.wait() do
         if Toggles.AutoCatch.Value then
@@ -536,6 +541,7 @@ table.insert(Threads, task.spawn(function() --AutoCatch
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoCraftClaim1
     while task.wait() do
         if Toggles.AutoCraftClaim1.Value then
@@ -551,6 +557,7 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim1
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoCraftClaim2
     while task.wait() do
         if Toggles.AutoCraftClaim2.Value then
@@ -566,6 +573,7 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim2
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoCraftClaim3
     while task.wait() do
         if Toggles.AutoCraftClaim3.Value then
@@ -581,6 +589,7 @@ table.insert(Threads, task.spawn(function() --AutoCraftClaim3
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --Godmode
     while task.wait() do
         if Toggles.Godmode.Value then
@@ -588,6 +597,7 @@ table.insert(Threads, task.spawn(function() --Godmode
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoOpen
     while task.wait() do
         if Toggles.AutoOpen.Value then
@@ -596,6 +606,7 @@ table.insert(Threads, task.spawn(function() --AutoOpen
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoFish
     while task.wait() do
         if Toggles.AutoFish.Value then
@@ -605,6 +616,7 @@ table.insert(Threads, task.spawn(function() --AutoFish
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoFishSell
     while task.wait() do
         if Toggles.AutoFishSell.Value then
@@ -612,6 +624,7 @@ table.insert(Threads, task.spawn(function() --AutoFishSell
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoShrines
     while task.wait() do
         if Toggles.AutoShrines.Value then
@@ -626,6 +639,7 @@ table.insert(Threads, task.spawn(function() --AutoShrines
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --TPMobs
     while task.wait() do
         if Toggles.TPMobs.Value then
@@ -636,6 +650,7 @@ table.insert(Threads, task.spawn(function() --TPMobs
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
         if Toggles.AutoBoss.Value then
@@ -683,6 +698,7 @@ table.insert(Threads, task.spawn(function() --AutoBoss
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --BossGodmode
     while task.wait() do
         if Toggles.BossGodmode.Value then
@@ -695,6 +711,7 @@ table.insert(Threads, task.spawn(function() --BossGodmode
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --RespawnKraken
     while task.wait() do
         if Toggles.RespawnKraken.Value then
@@ -704,6 +721,7 @@ table.insert(Threads, task.spawn(function() --RespawnKraken
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --RespawnSlime
     while task.wait() do
         if Toggles.RespawnSlime.Value then
@@ -713,6 +731,7 @@ table.insert(Threads, task.spawn(function() --RespawnSlime
         end
     end
 end))
+
 table.insert(Threads, task.spawn(function() --AutoDigSite
     while task.wait() do
         if Toggles.DigSite.Value then

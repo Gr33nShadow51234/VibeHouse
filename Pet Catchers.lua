@@ -772,7 +772,7 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 if not Toggles.DigSite.Value then break end
                 
                 if game:GetService("UserInputService").TouchEnabled then 
-                    fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+                    --fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
                 end
                 
                 task.wait(.5)

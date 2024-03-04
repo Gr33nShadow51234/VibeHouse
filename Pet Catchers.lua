@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-local Debug = true
+local Debug = false
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
@@ -362,6 +362,16 @@ MobsBox:AddToggle('BossGodmode', {
     end
 })
 
+MinigameBox:AddToggle('DigSiteMobile', {
+    Text = 'Mobile Support | ENABLE ON MOBILE',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
+
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
@@ -563,7 +573,7 @@ table.insert(Threads, task.spawn(function() --AutoCatch
 
                 success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
                 task.wait()
-            until success or Pet.Model.Parent == nil or Pet.Model == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
+            until success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
             
             if Pet.Model.Parent ~= nil then
                 Pet.Model:Destroy()
@@ -825,9 +835,11 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 if not Toggles.DigSite.Value then break end
                 
                 InsideMinigame = true
-
-                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
-
+                
+                if not Toggle.DigSiteMobile.Value then
+                    fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+                end
+                
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)

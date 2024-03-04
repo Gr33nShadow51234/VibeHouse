@@ -362,6 +362,16 @@ MobsBox:AddToggle('BossGodmode', {
     end
 })
 
+MinigameBox:AddToggle('DigSiteMobile', {
+    Text = 'Mobile Support',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'ENABLE ON MOBILE', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
+
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
@@ -371,14 +381,6 @@ MinigameBox:AddToggle('DigSite', {
     end
 })
 
-MinigameBox:AddToggle('DigSiteMobile', {
-    Text = 'Mobile Support',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'ENABLE ON MOBILE', -- Information shown when you hover over the toggle
-
-    Callback = function(Value)
-    end
-})
 
 CraftSlot1:AddDropdown('SelectRecipe1', {
     Values = CraftingRecipes,
@@ -837,7 +839,7 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 if not Toggle.DigSiteMobile.Value then
                     fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
                 end
-                
+
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)

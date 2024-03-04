@@ -503,23 +503,21 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                     print(find_lowest_enemy())
                 end
             end
-
-            if Toggles.PrioritizeShiny.Value then 
-                if find_shiny_enemy() then
-                    Pet = find_shiny_enemy()
-                    Cube= "Epic"
-                    if Debug then
-                        print("SHINY!!!!!!!!!!!!!!!!!!!")
-                    end
-                end
-            end
-
             --local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
 
             --Pet.Model.PrimaryPart.Transparency = 0.2
             --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
 
             repeat
+                if Toggles.PrioritizeShiny.Value then 
+                    if find_shiny_enemy() then
+                        Pet = find_shiny_enemy()
+                        Cube= "Epic"
+                        if Debug then
+                            print("SHINY!!!!!!!!!!!!!!!!!!!")
+                        end
+                    end
+                end
                 if table.find(PetRarity, Rarity) <= 2 then
                     Cube = get_highest_ball()
                 end
@@ -772,7 +770,11 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 end
 
                 if not Toggles.DigSite.Value then break end
-                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+                
+                if game:GetService("UserInputService").TouchEnabled then 
+                    fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+                end
+                
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)

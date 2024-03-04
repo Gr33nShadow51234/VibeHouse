@@ -21,6 +21,9 @@ local Threads = {}
 local Debug = true
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
+local BossRecords = DataSave.BossRecords
+local CraftingList = DataSave.Crafting
+
 local ShrinesTable = require(game:GetService("ReplicatedStorage").Shared.Data.Shrines)
 local ChestTable = require(game:GetService("ReplicatedStorage").Shared.Data.Chests)
 local Fish = require(game:GetService("ReplicatedStorage").Client.Handlers.Fishing)
@@ -35,7 +38,8 @@ local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
 local BossAreas = workspace.Bosses
 local Bosses = {"king-slime","the-kraken"}
 local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
-local CraftingList = DataSave.Crafting
+local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Left.Button
+local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
 
 -- Functions
 function find_nearest_enemy()
@@ -132,6 +136,33 @@ function get_minigame_pet()
     return id, HighestGamer
 end
 
+function set_boss_page(page)
+    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Visible
+    local lvl = tonumber(string.split(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Level.Text, "x")[2])
+
+    if lvl > page then
+        local run =  lvl - page
+
+        for i=1, run do
+            firesignal(BossLeft.Activated)
+            task.wait()
+        end
+        print("!")
+        return true
+    elseif lvl < page then
+        local run =  page - lvl
+
+        for i=1, run do
+            firesignal(BossRight.Activated)
+            task.wait()
+        end
+        print("!")
+        return true
+    else
+        return true
+    end
+end
+
 
 
 -- Tabs
@@ -153,6 +184,36 @@ local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
 -- toggles
+GeneralBox:AddToggle('AutoCollect', {
+    Text = 'Auto Collect',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Collects all Orbs/Items on Ground', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+GeneralBox:AddToggle('AutoShrines', {
+    Text = 'Auto Shrines',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Collects All Shrines', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
+local AutoChest = GeneralBox:AddButton({
+    Text = 'Auto Chest',
+    Func = function()
+        for i,v in ChestTable do
+            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("OpenWorldChest",i)
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = 'Collects All Chest'
+})
+
+PetBox:AddDivider()
+
 PetBox:AddDropdown('ModeDropdown', {
     Values = {'Nearest', 'Highest Star', 'Lowest Star'},
     Default = 1, -- number index of the value / string
@@ -180,28 +241,6 @@ PetBox:AddToggle('AutoCatch', {
     Callback = function(Value)
     end
 })
-
-GeneralBox:AddToggle('AutoShrines', {
-    Text = 'Auto Shrines',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'Collects All Shrines', -- Information shown when you hover over the toggle
-
-    Callback = function(Value)
-    end
-})
-
-local AutoChest = GeneralBox:AddButton({
-    Text = 'Auto Chest',
-    Func = function()
-        for i,v in ChestTable do
-            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("OpenWorldChest",i)
-        end
-    end,
-    DoubleClick = false,
-    Tooltip = 'Collects All Chest'
-})
-
-PetBox:AddDivider()
 
 PetBox:AddDropdown('EggDropdown', {
     Values = {'Mystery Egg', 'Elite Mystery Egg'},
@@ -240,6 +279,30 @@ FishBox:AddToggle('AutoFishSell', {
     Callback = function(Value)
     end
 })
+
+MobsBox:AddSlider('SlimeLVL', {
+    Text = 'Slime LvL | 0 = inf',
+    Default = BossRecords["king-slime"] + 1,
+    Min = 0,
+    Max = BossRecords["king-slime"] + 1,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+    end
+})
+MobsBox:AddSlider('KrakenLVL', {
+    Text = 'Kraken LvL | 0 = inf',
+    Default = BossRecords["the-kraken"] + 1,
+    Min = 0,
+    Max = BossRecords["the-kraken"] + 1,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+    end
+})
+
 MobsBox:AddToggle('AutoBoss', {
     Text = 'Auto Boss',
     Default = false, -- Default value (true / false)
@@ -251,7 +314,7 @@ MobsBox:AddToggle('AutoBoss', {
 MobsBox:AddToggle('RespawnKraken', {
     Text = 'Respawn Kraken',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+    Tooltip = 'Respawn Kraken', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -259,7 +322,7 @@ MobsBox:AddToggle('RespawnKraken', {
 MobsBox:AddToggle('RespawnSlime', {
     Text = 'Respawn Slime',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+    Tooltip = 'Respawn Slime', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -292,6 +355,7 @@ MobsBox:AddToggle('BossGodmode', {
     Callback = function(Value)
     end
 })
+
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
@@ -398,7 +462,17 @@ CraftSlot3:AddToggle('AutoCraftClaim3', {
     end
 })
 
-table.insert(Threads, task.spawn(function() --Godmode
+
+table.insert(Threads, task.spawn(function() --AutoCollect
+    while task.wait() do
+        if Toggles.AutoCollect.Value then
+            for i,v in workspace.Rendered.Pickups:GetChildren() do
+                v.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --AutoCatch
     while task.wait() do
         if Toggles.AutoCatch.Value then
             local Pet = nil
@@ -431,10 +505,12 @@ table.insert(Threads, task.spawn(function() --Godmode
             end
 
             if Toggles.PrioritizeShiny.Value then 
-                Pet = find_shiny_enemy()
-
-                if Debug then
-                    print("SHINY!!!!!!!!!!!!!!!!!!!")
+                if find_shiny_enemy() then
+                    Pet = find_shiny_enemy()
+                    Cube= "Epic"
+                    if Debug then
+                        print("SHINY!!!!!!!!!!!!!!!!!!!")
+                    end
                 end
             end
 
@@ -460,74 +536,51 @@ table.insert(Threads, task.spawn(function() --Godmode
         end
     end
 end))
-
-table.insert(Threads, task.spawn(function() --Godmode
+table.insert(Threads, task.spawn(function() --AutoCraftClaim1
     while task.wait() do
         if Toggles.AutoCraftClaim1.Value then
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Craft.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 1, Options.SelectRecipe1.Value, Options.SelectAmount1.Value)  
-            end
-            
-            for i,v in CraftingList do
-                if #CraftingList == 0 then continue end
-                if v.Slot == 2 or v.Slot == 3 then continue end
-            
-                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
-                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 1)
-                else 
-                    if Debug then
-                        print("Wait Slot 1")
-                    end
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 1, Options.SelectRecipe1.Value, Options.SelectAmount1.Value)   
+            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Claim.Visible then
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 1)
+            else 
+                if Debug then
+                    print("Wait Slot 1")
                 end
             end
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --Godmode
+table.insert(Threads, task.spawn(function() --AutoCraftClaim2
     while task.wait() do
         if Toggles.AutoCraftClaim2.Value then
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Craft.Visible then 
                 game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 2, Options.SelectRecipe2.Value, Options.SelectAmount2.Value)  
-            end
-            
-            for i,v in CraftingList do
-                if #CraftingList == 0 then continue end
-                if v.Slot == 1 or v.Slot == 3 then continue end
-            
-                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
-                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 2)
-                else 
-                    if Debug then
-                        print("Wait Slot 2")
-                    end
+            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Claim.Visible then
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 2)
+            else 
+                if Debug then
+                    print("Wait Slot 2")
                 end
             end
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --Godmode
+table.insert(Threads, task.spawn(function() --AutoCraftClaim3
     while task.wait() do
         if Toggles.AutoCraftClaim3.Value then
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Craft.Visible then 
                 game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 3, Options.SelectRecipe3.Value, Options.SelectAmount3.Value)  
-            end
-            
-            for i,v in CraftingList do
-                if #CraftingList == 0 then continue end
-                if v.Slot == 2 or v.Slot == 1 then continue end
-            
-                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
-                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 3)
-                else 
-                    if Debug then
-                        print("Wait Slot 3")
-                    end
+            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Claim.Visible then
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 3)
+            else 
+                if Debug then
+                    print("Wait Slot 3")
                 end
             end
         end
     end
 end))
-
 table.insert(Threads, task.spawn(function() --Godmode
     while task.wait() do
         if Toggles.Godmode.Value then
@@ -535,7 +588,7 @@ table.insert(Threads, task.spawn(function() --Godmode
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --Godmode
+table.insert(Threads, task.spawn(function() --AutoOpen
     while task.wait() do
         if Toggles.AutoOpen.Value then
             if Options.EggDropdown.Value == "" then continue end
@@ -573,7 +626,7 @@ table.insert(Threads, task.spawn(function() --AutoShrines
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --SlimeGodmode
+table.insert(Threads, task.spawn(function() --TPMobs
     while task.wait() do
         if Toggles.TPMobs.Value then
             local Monster = find_nearest_monster()
@@ -583,7 +636,7 @@ table.insert(Threads, task.spawn(function() --SlimeGodmode
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --SlimeGodmode
+table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
         if Toggles.AutoBoss.Value then
             for i,v in Bosses do
@@ -594,14 +647,36 @@ table.insert(Threads, task.spawn(function() --SlimeGodmode
 
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
 
-                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel
-                    print("afs")
-                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
-                    print("afs")
+                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Visible == true or not Toggles.AutoBoss.Value
+                    if not Toggles.AutoBoss.Value then break end
 
-                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible
-                    
+                    local success = nil
+                    if v == "the-kraken" then
+                        if Options.KrakenLVL.Value == 0 then
+                            success = set_boss_page(BossRecords["the-kraken"] + 1)
+                        else
+                            success = set_boss_page(Options.KrakenLVL.Value)
+                        end
+                    elseif v == "king-slime" then
+                        if Options.KrakenLVL.Value == 0 then
+                            success = set_boss_page(BossRecords["king-slime"] + 1)
+                        else
+                            success = set_boss_page(Options.SlimeLVL.Value)
+                        end
+                    end
+
+                    print(success)
+                    repeat task.wait() until success or not Toggles.AutoBoss.Value
+                    if not Toggles.AutoBoss.Value then break end
+
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+
+                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
+                    if not Toggles.AutoBoss.Value then break end
+
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                    task.wait(1)
+
                     break
                 end
             end
@@ -613,7 +688,8 @@ table.insert(Threads, task.spawn(function() --BossGodmode
         if Toggles.BossGodmode.Value then
             if workspace.Rendered:FindFirstChild("King Slime") then
                 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered["King Slime"].PrimaryPart.CFrame * CFrame.new(0, 16, -15)
-            elseif workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken"):FindFirstChild("Area") then
+            elseif workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") then
+                workspace.Rendered.Generic.Kraken:WaitForChild("Area")
                 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered.Generic.Kraken.Area.CFrame * CFrame.new(-280, 50, 300)
             end
         end
@@ -640,6 +716,10 @@ end))
 table.insert(Threads, task.spawn(function() --AutoDigSite
     while task.wait() do
         if Toggles.DigSite.Value then
+            local State, CurrentHP, MaxHP = canDoBoss()
+
+            if not State then continue end
+
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
                 for i,v in workspace.Rendered.Generic:GetChildren() do
                     if v:IsA("Part") and v.Name == "Glow" then
@@ -663,9 +743,12 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 end
             else
                 nearest_table = {}
+                
+                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.HUD.Visible then continue end
 
                 if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                    task.wait(2)
                 end
 
                 if DataSave.GoldenTickets == 0 then continue end
@@ -676,9 +759,13 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 end
 
                 fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
-                task.wait(.1)
+                task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)
+
+                game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 1, 0, 1)
+                repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content:FindFirstChild(BestPet)
+
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content[BestPet].Button.Activated) 
                 task.wait(.1)
 
@@ -689,9 +776,19 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                         firesignal(Start.Button.Activated)
                     end
                 end
+                game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 100, 0, 100)
                 task.wait(3)
             end
         end
+    end
+end))
+
+table.insert(Threads, task.spawn(function() --Godmode
+    while task.wait(1) do
+        Options.SlimeLVL.Max = BossRecords["king-slime"] + 1
+        Options.KrakenLVL.Max = BossRecords["the-kraken"] + 1
+        Options.KrakenLVL:Display()
+        Options.SlimeLVL:Display()
     end
 end))
 

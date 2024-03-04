@@ -362,10 +362,10 @@ MobsBox:AddToggle('BossGodmode', {
     end
 })
 
-MinigameBox:AddToggle('DigSiteMobile', {
+MinigameBox:AddToggle('DSM', {
     Text = 'Mobile Support',
     Default = false, -- Default value (true / false)
-    Tooltip = 'ENABLE ON MOBILE', -- Information shown when you hover over the toggle
+    Tooltip = 'IMPORTANT', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -836,7 +836,8 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 
                 InsideMinigame = true
                 
-                if not Toggle.DigSiteMobile.Value then
+
+                if not Toggles.DSM.Value then
                     fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
                 end
 

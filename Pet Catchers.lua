@@ -362,16 +362,6 @@ MobsBox:AddToggle('BossGodmode', {
     end
 })
 
-MinigameBox:AddToggle('DSM', {
-    Text = 'Mobile Support',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'IMPORTANT', -- Information shown when you hover over the toggle
-
-    Callback = function(Value)
-    end
-})
-
-
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
@@ -837,7 +827,7 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 InsideMinigame = true
                 
 
-                if not Toggles.DSM.Value then
+                if not game:GetService("UserInputService").TouchEnabled then
                     fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
                 end
 

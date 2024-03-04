@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-local Debug = false
+local Debug = true
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
@@ -152,6 +152,10 @@ function set_boss_page(page)
     repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Visible
     local lvl = tonumber(string.split(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Level.Text, "x")[2])
 
+    if lvl == page then
+        return true
+    end
+
     if lvl > page then
         repeat 
             firesignal(BossLeft.Activated)
@@ -169,8 +173,6 @@ function set_boss_page(page)
 
         until lvl == page
         
-        return true
-    else
         return true
     end
 end
@@ -561,8 +563,12 @@ table.insert(Threads, task.spawn(function() --AutoCatch
 
                 success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
                 task.wait()
-            until success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
-            Pet.Model:Destroy()
+            until success or Pet.Model.Parent == nil or Pet.Model == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
+            
+            if Pet.Model.Parent ~= nil then
+                Pet.Model:Destroy()
+            end
+
             --Pet.Model.PrimaryPart.Transparency = old1
             --Pet.Model.PrimaryPart.Color = old2
 
@@ -693,13 +699,13 @@ table.insert(Threads, task.spawn(function() --AutoBoss
                     local success = nil
 
                     if v == "the-kraken" then
-                        if Toggles.AutoBosslvl25.Value == 0 then
+                        if Toggles.AutoBosslvl25.Value then
                             success = set_boss_page(math.clamp(BossRecords["the-kraken"] + 1, 0, 25))
                         else
                             success = set_boss_page(BossRecords["the-kraken"] + 1)
                         end
                     elseif v == "king-slime" then
-                        if Toggles.AutoBosslvl25.Value == 0 then
+                        if Toggles.AutoBosslvl25.Value then
                             success = set_boss_page(math.clamp(BossRecords["king-slime"] + 1, 0, 25))
                         else
                             success = set_boss_page(BossRecords["king-slime"] + 1)
@@ -716,7 +722,7 @@ table.insert(Threads, task.spawn(function() --AutoBoss
                     if not Toggles.AutoBoss.Value then break end
 
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
-                    task.wait(1)
+                    task.wait(2)
                     InsideBoss = false
 
                     break
@@ -794,11 +800,9 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
 
                 print("FINISHED GAME!!!")
+                task.wait(5)
 
                 InsideMinigame = false
-
-                task.wait(2)
-
             else
                 nearest_table = {}
 
@@ -821,6 +825,8 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 if not Toggles.DigSite.Value then break end
                 
                 InsideMinigame = true
+
+                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
 
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)

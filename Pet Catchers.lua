@@ -362,16 +362,6 @@ MobsBox:AddToggle('BossGodmode', {
     end
 })
 
-MinigameBox:AddToggle('DigSiteMobile', {
-    Text = 'Mobile Support | ENABLE ON MOBILE',
-    Default = false, -- Default value (true / false)
-    Tooltip = '', -- Information shown when you hover over the toggle
-
-    Callback = function(Value)
-    end
-})
-
-
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
@@ -381,6 +371,14 @@ MinigameBox:AddToggle('DigSite', {
     end
 })
 
+MinigameBox:AddToggle('DigSiteMobile', {
+    Text = 'Mobile Support',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'ENABLE ON MOBILE', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
 
 CraftSlot1:AddDropdown('SelectRecipe1', {
     Values = CraftingRecipes,

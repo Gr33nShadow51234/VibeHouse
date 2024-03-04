@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-local Debug = false
+local Debug = true
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
@@ -40,7 +40,8 @@ local Bosses = {"king-slime","the-kraken"}
 local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
 local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Left.Button
 local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
-
+local InsideBoss = false
+local InsideMinigame = false
 -- Functions
 function find_nearest_enemy()
     local nearest, rarity, nearest_distance = nil, "Common", math.huge
@@ -81,9 +82,20 @@ function find_shiny_enemy()
     local shiny = nil
     for i,v in PetRender.WorldPets do
         if not v.Shiny then continue end
+
         shiny = v
     end
     return shiny
+end
+
+function find_rare_enemy()
+    local rare = nil
+    for i,v in PetRender.WorldPets do
+        if PetTable[v.Name].Rarity == "Legendary" or PetTable[v.Name].Rarity == "Secret" then
+            rare = v
+        end
+    end
+    return rare
 end
 
 function find_nearest_monster()
@@ -141,22 +153,22 @@ function set_boss_page(page)
     local lvl = tonumber(string.split(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Level.Text, "x")[2])
 
     if lvl > page then
-        local run =  lvl - page
-
-        for i=1, run do
+        repeat 
             firesignal(BossLeft.Activated)
             task.wait()
-        end
-        print("!")
-        return true
-    elseif lvl < page then
-        local run =  page - lvl
+            lvl = tonumber(string.split(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Level.Text, "x")[2])
 
-        for i=1, run do
+        until lvl == page
+
+        return success
+    elseif lvl < page then
+        repeat 
             firesignal(BossRight.Activated)
             task.wait()
-        end
-        print("!")
+            lvl = tonumber(string.split(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Level.Text, "x")[2])
+
+        until lvl == page
+        
         return true
     else
         return true
@@ -212,8 +224,6 @@ local AutoChest = GeneralBox:AddButton({
     Tooltip = 'Collects All Chest'
 })
 
-PetBox:AddDivider()
-
 PetBox:AddDropdown('ModeDropdown', {
     Values = {'Nearest', 'Highest Star', 'Lowest Star'},
     Default = 1, -- number index of the value / string
@@ -221,6 +231,14 @@ PetBox:AddDropdown('ModeDropdown', {
 
     Text = 'Modes',
     Tooltip = 'Choose Mode', -- Information shown when you hover over the dropdown
+
+    Callback = function(Value)
+    end
+})
+PetBox:AddToggle('PrioritizeRare', {
+    Text = 'Prioritize Leg & Secret',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Prioritize Leg & Secret', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -241,7 +259,7 @@ PetBox:AddToggle('AutoCatch', {
     Callback = function(Value)
     end
 })
-
+PetBox:AddDivider()
 PetBox:AddDropdown('EggDropdown', {
     Values = {'Mystery Egg', 'Elite Mystery Egg'},
     Default = 1, -- number index of the value / string
@@ -280,24 +298,10 @@ FishBox:AddToggle('AutoFishSell', {
     end
 })
 
-MobsBox:AddSlider('SlimeLVL', {
-    Text = 'Slime LvL | 0 = inf',
-    Default = BossRecords["king-slime"] + 1,
-    Min = 0,
-    Max = BossRecords["king-slime"] + 1,
-    Rounding = 0,
-    Compact = false,
-
-    Callback = function(Value)
-    end
-})
-MobsBox:AddSlider('KrakenLVL', {
-    Text = 'Kraken LvL | 0 = inf',
-    Default = BossRecords["the-kraken"] + 1,
-    Min = 0,
-    Max = BossRecords["the-kraken"] + 1,
-    Rounding = 0,
-    Compact = false,
+MobsBox:AddToggle('AutoBosslvl25', {
+    Text = 'Auto Boss lvl 25',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -475,10 +479,15 @@ end))
 table.insert(Threads, task.spawn(function() --AutoCatch
     while task.wait() do
         if Toggles.AutoCatch.Value then
+            if InsideBoss then continue end
+            if InsideMinigame then continue end
+
             local Pet = nil
             local success = false
             local Rarity = nil
             local Cube = "Common"
+            local STOP = false
+            local PRIO = false
 
             if Debug then
                 print(Options.ModeDropdown.Value)
@@ -508,22 +517,51 @@ table.insert(Threads, task.spawn(function() --AutoCatch
             --Pet.Model.PrimaryPart.Transparency = 0.2
             --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
 
-            repeat
-                if Toggles.PrioritizeShiny.Value then 
-                    if find_shiny_enemy() then
-                        Pet = find_shiny_enemy()
-                        Cube= "Epic"
-                        if Debug then
-                            print("SHINY!!!!!!!!!!!!!!!!!!!")
-                        end
+            if Toggles.PrioritizeShiny.Value then 
+                if find_shiny_enemy() then
+                    Pet = find_shiny_enemy()
+                    Cube = "Epic"
+                    PRIO = true
+
+                    if Debug then
+                        print("SHINY!!!!!!!!!!!!!!!!!!!")
                     end
                 end
-                if table.find(PetRarity, Rarity) <= 2 then
+            end
+            if Toggles.PrioritizeRare.Value then 
+
+                if find_rare_enemy() then
+                    Pet = find_rare_enemy()
                     Cube = get_highest_ball()
+                    PRIO = true
+                    if Debug then
+                        print("Leg / Secret")
+                    end
                 end
-                success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
+            end
+
+            print(find_highest_enemy())
+            repeat
+                if not PRIO then
+                    if Toggles.PrioritizeShiny.Value then 
+                        if find_shiny_enemy() then
+                            STOP = true
+                        end
+                    end
+                    if Toggles.PrioritizeRare.Value then 
+                        if find_rare_enemy() then
+                            STOP = true
+                        end
+                    end
+
+                    if table.find(PetRarity, Rarity) <= 2 then
+                        Cube = get_highest_ball()
+                    end
+                end
+
+                success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
                 task.wait()
-            until success or Pet.Model == nil or Toggles.AutoCatch.Value == false
+            until success or Pet.Model == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
 
             --Pet.Model.PrimaryPart.Transparency = old1
             --Pet.Model.PrimaryPart.Color = old2
@@ -637,11 +675,15 @@ end))
 table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
         if Toggles.AutoBoss.Value then
+            if InsideMinigame then continue end
+
             for i,v in Bosses do
                 local State, CurrentHP, MaxHP = canDoBoss()
                 if State then
                     if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
                     if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
+
+                    InsideBoss = true
 
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
 
@@ -649,17 +691,18 @@ table.insert(Threads, task.spawn(function() --AutoBoss
                     if not Toggles.AutoBoss.Value then break end
 
                     local success = nil
+
                     if v == "the-kraken" then
-                        if Options.KrakenLVL.Value == 0 then
-                            success = set_boss_page(BossRecords["the-kraken"] + 1)
+                        if Toggles.AutoBosslvl25.Value == 0 then
+                            success = set_boss_page(math.clamp(BossRecords["the-kraken"] + 1, 0, 25))
                         else
-                            success = set_boss_page(Options.KrakenLVL.Value)
+                            success = set_boss_page(BossRecords["the-kraken"] + 1)
                         end
                     elseif v == "king-slime" then
-                        if Options.KrakenLVL.Value == 0 then
-                            success = set_boss_page(BossRecords["king-slime"] + 1)
+                        if Toggles.AutoBosslvl25.Value == 0 then
+                            success = set_boss_page(math.clamp(BossRecords["king-slime"] + 1, 0, 25))
                         else
-                            success = set_boss_page(Options.SlimeLVL.Value)
+                            success = set_boss_page(BossRecords["king-slime"] + 1)
                         end
                     end
 
@@ -674,6 +717,7 @@ table.insert(Threads, task.spawn(function() --AutoBoss
 
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                     task.wait(1)
+                    InsideBoss = false
 
                     break
                 end
@@ -716,7 +760,8 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
         if Toggles.DigSite.Value then
             local State, CurrentHP, MaxHP = canDoBoss()
 
-            --if State then continue end
+            if InsideBoss then continue end
+
             if not Toggles.DigSite.Value then break end
 
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
@@ -747,8 +792,12 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
 
                 repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible 
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
-                task.wait(2)
+
                 print("FINISHED GAME!!!")
+
+                InsideMinigame = false
+
+                task.wait(2)
 
             else
                 nearest_table = {}
@@ -771,10 +820,10 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
 
                 if not Toggles.DigSite.Value then break end
                 
-                if game:GetService("UserInputService").TouchEnabled then 
-                    --fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
-                end
-                
+                InsideMinigame = true
+
+                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+
                 task.wait(.5)
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
                 task.wait(.3)
@@ -796,15 +845,6 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 task.wait(3)
             end
         end
-    end
-end))
-
-table.insert(Threads, task.spawn(function() --Godmode
-    while task.wait(1) do
-        Options.SlimeLVL.Max = BossRecords["king-slime"] + 1
-        Options.KrakenLVL.Max = BossRecords["the-kraken"] + 1
-        Options.KrakenLVL:Display()
-        Options.SlimeLVL:Display()
     end
 end))
 

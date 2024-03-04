@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-local Debug = true
+local Debug = false
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords

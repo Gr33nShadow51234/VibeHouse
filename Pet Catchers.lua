@@ -1,9 +1,9 @@
 --------Anti AFK--------
 if not game:IsLoaded() then game.Loaded:Wait() end
 for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
-    print("Anti AFK | Activ")
     v:Disable()
 end
+print("Anti AFK | Active")
 
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
@@ -18,7 +18,7 @@ local Window = Library:CreateWindow({
 })
 
 local Threads = {}
-
+local Debug = true
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local ShrinesTable = require(game:GetService("ReplicatedStorage").Shared.Data.Shrines)
@@ -34,17 +34,21 @@ local Invoke = game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitF
 local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
 local BossAreas = workspace.Bosses
 local Bosses = {"king-slime","the-kraken"}
+local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
+local CraftingList = DataSave.Crafting
 
 -- Functions
 function find_nearest_enemy()
-    local nearest, nearest_distance = nil, math.huge
+    local nearest, rarity, nearest_distance = nil, "Common", math.huge
     for i,v in PetRender.WorldPets do
         local dist = (PlayerPart.Position - v.Model.PrimaryPart.Position).Magnitude
+        local Rarity = PetTable[v.Name].Rarity
         if dist > nearest_distance then continue end
         nearest = v
         nearest_distance = dist
+        rarity = Rarity
     end
-    return nearest, nearest_distance
+    return nearest, rarity, nearest_distance
 end
 
 function find_highest_enemy()
@@ -99,6 +103,7 @@ function get_highest_ball()
     end
     return highest_rarity, amount
 end
+
 function canDoBoss()
     if not BossStuff.Current then return true end
     if not BossStuff.Current.State then return true end
@@ -112,6 +117,20 @@ function canDoBoss()
     return false, BossStuff.Current.State.Health, BossStuff.Current.State.MaxHealth
 end
 
+function get_minigame_pet()
+    local id, HighestGamer = nil, 0
+    for i,v in DataSave.Pets do
+        if not v.Charms then continue end
+
+        for _,Charm in v.Charms do
+            if Charm.Name ~= "Gamer" then continue end
+            if HighestGamer > Charm.Level then continue end
+            id = v.Id
+            HighestGamer = Charm.Level
+        end
+    end
+    return id, HighestGamer
+end
 
 
 
@@ -124,10 +143,15 @@ local Tabs = {
 -- Groups
 local GeneralBox = Tabs.Main:AddLeftGroupbox('General')
 local PetBox = Tabs.Main:AddLeftGroupbox('Pets')
-local FishBox = Tabs.Main:AddRightGroupbox('Fish')
+local CraftBox = Tabs.Main:AddLeftTabbox('Crafting')
 local MobsBox = Tabs.Main:AddRightGroupbox('Mobs')
+local FishBox = Tabs.Main:AddRightGroupbox('Fish')
 local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 
+-- Group Tabs
+local CraftSlot1 = CraftBox:AddTab('Slot 1')
+local CraftSlot2 = CraftBox:AddTab('Slot 2')
+local CraftSlot3 = CraftBox:AddTab('Slot 3')
 -- toggles
 PetBox:AddDropdown('ModeDropdown', {
     Values = {'Nearest', 'Highest Star', 'Lowest Star'},
@@ -216,18 +240,6 @@ FishBox:AddToggle('AutoFishSell', {
     Callback = function(Value)
     end
 })
-MobsBox:AddSlider('BossHPBar', {
-    Text = 'HP',
-    Default = 0,
-    Min = 0,
-    Max = 0,
-    Rounding = 0,
-    Compact = true,
-
-    Callback = function(Value)
-    end
-})
-
 MobsBox:AddToggle('AutoBoss', {
     Text = 'Auto Boss',
     Default = false, -- Default value (true / false)
@@ -289,6 +301,103 @@ MinigameBox:AddToggle('DigSite', {
     end
 })
 
+
+CraftSlot1:AddDropdown('SelectRecipe1', {
+    Values = CraftingRecipes,
+    Default = 1, -- number index of the value / string
+    Multi = false, -- true / false, allows multiple choices to be selected
+
+    Text = 'Select Recipe',
+    Tooltip = 'Recipe for Slot 1', -- Information shown when you hover over the dropdown
+
+    Callback = function(Value)
+    end
+})
+CraftSlot1:AddSlider('SelectAmount1', {
+    Text = 'Select Amount',
+    Default = 1,
+    Min = 1,
+    Max = 999,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+        print('[cb] MySlider was changed! New value:', Value)
+    end
+})
+CraftSlot1:AddToggle('AutoCraftClaim1', {
+    Text = 'Craft & Claim',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
+CraftSlot2:AddDropdown('SelectRecipe2', {
+    Values = CraftingRecipes,
+    Default = 1, -- number index of the value / string
+    Multi = false, -- true / false, allows multiple choices to be selected
+
+    Text = 'Select Recipe',
+    Tooltip = 'Recipe for Slot 2', -- Information shown when you hover over the dropdown
+
+    Callback = function(Value)
+    end
+})
+CraftSlot2:AddSlider('SelectAmount2', {
+    Text = 'Select Amount',
+    Default = 1,
+    Min = 1,
+    Max = 999,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+        print('[cb] MySlider was changed! New value:', Value)
+    end
+})
+CraftSlot2:AddToggle('AutoCraftClaim2', {
+    Text = 'Craft & Claim',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
+CraftSlot3:AddDropdown('SelectRecipe3', {
+    Values = CraftingRecipes,
+    Default = 1, -- number index of the value / string
+    Multi = false, -- true / false, allows multiple choices to be selected
+
+    Text = 'Select Recipe',
+    Tooltip = 'Recipe for Slot 3', -- Information shown when you hover over the dropdown
+
+    Callback = function(Value)
+    end
+})
+CraftSlot3:AddSlider('SelectAmount3', {
+    Text = 'Select Amount',
+    Default = 1,
+    Min = 1,
+    Max = 999,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+        print('[cb] MySlider was changed! New value:', Value)
+    end
+})
+CraftSlot3:AddToggle('AutoCraftClaim3', {
+    Text = 'Craft & Claim',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+
 table.insert(Threads, task.spawn(function() --Godmode
     while task.wait() do
         if Toggles.AutoCatch.Value then
@@ -297,21 +406,36 @@ table.insert(Threads, task.spawn(function() --Godmode
             local Rarity = nil
             local Cube = "Common"
 
-            --print(Options.ModeDropdown.Value)
-            if Options.ModeDropdown.Value == "Nearest" then
-                Pet = find_nearest_enemy()
-                --print(find_nearest_enemy())
-            elseif Options.ModeDropdown.Value == "Highest Star" then
-                Pet, Rarity = find_highest_enemy()
-                --print(find_highest_enemy())
-            elseif Options.ModeDropdown.Value == "Lowest Star" then
-                Pet, Rarity = find_lowest_enemy()
-                --print(find_lowest_enemy())
+            if Debug then
+                print(Options.ModeDropdown.Value)
             end
 
-            if Toggles.AutoCatch.PrioritizeShiny then 
-                find_shiny_enemy()
-                --print("SHINY!!!!!!!!!!!!!!!!!!!")
+            if Options.ModeDropdown.Value == "Nearest" then
+                Pet, Rarity = find_nearest_enemy()
+
+                if Debug then
+                    print(find_nearest_enemy())
+                end
+            elseif Options.ModeDropdown.Value == "Highest Star" then
+                Pet, Rarity = find_highest_enemy()
+
+                if Debug then
+                    print(find_highest_enemy())
+                end
+            elseif Options.ModeDropdown.Value == "Lowest Star" then
+                Pet, Rarity = find_lowest_enemy()
+
+                if Debug then
+                    print(find_lowest_enemy())
+                end
+            end
+
+            if Toggles.PrioritizeShiny.Value then 
+                Pet = find_shiny_enemy()
+
+                if Debug then
+                    print("SHINY!!!!!!!!!!!!!!!!!!!")
+                end
             end
 
             local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
@@ -323,15 +447,83 @@ table.insert(Threads, task.spawn(function() --Godmode
                 if table.find(PetRarity, Rarity) <= 2 then
                     Cube = get_highest_ball()
                 end
-                print(Cube)
-                --success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
+                success = Invoke:InvokeServer("CapturePet",Pet.GUID,Cube)
                 task.wait()
             until success or Pet.Model == nil or Toggles.AutoCatch.Value == false
 
             Pet.Model.PrimaryPart.Transparency = old1
             Pet.Model.PrimaryPart.Color = old2
 
-            print("GOTCHA")
+            if Debug then
+                print("GOTCHA")
+            end
+        end
+    end
+end))
+
+table.insert(Threads, task.spawn(function() --Godmode
+    while task.wait() do
+        if Toggles.AutoCraftClaim1.Value then
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Craft.Visible then 
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 1, Options.SelectRecipe1.Value, Options.SelectAmount1.Value)  
+            end
+            
+            for i,v in CraftingList do
+                if #CraftingList == 0 then continue end
+                if v.Slot == 2 or v.Slot == 3 then continue end
+            
+                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
+                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 1)
+                else 
+                    if Debug then
+                        print("Wait Slot 1")
+                    end
+                end
+            end
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Godmode
+    while task.wait() do
+        if Toggles.AutoCraftClaim2.Value then
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Craft.Visible then 
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 2, Options.SelectRecipe2.Value, Options.SelectAmount2.Value)  
+            end
+            
+            for i,v in CraftingList do
+                if #CraftingList == 0 then continue end
+                if v.Slot == 1 or v.Slot == 3 then continue end
+            
+                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
+                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 2)
+                else 
+                    if Debug then
+                        print("Wait Slot 2")
+                    end
+                end
+            end
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Godmode
+    while task.wait() do
+        if Toggles.AutoCraftClaim3.Value then
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Craft.Visible then 
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 3, Options.SelectRecipe3.Value, Options.SelectAmount3.Value)  
+            end
+            
+            for i,v in CraftingList do
+                if #CraftingList == 0 then continue end
+                if v.Slot == 2 or v.Slot == 1 then continue end
+            
+                if os.time() >= v.Countdown.LastUpdateTime + v.Countdown.Duration then
+                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 3)
+                else 
+                    if Debug then
+                        print("Wait Slot 3")
+                    end
+                end
+            end
         end
     end
 end))
@@ -399,16 +591,17 @@ table.insert(Threads, task.spawn(function() --SlimeGodmode
                 if State then
                     if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
                     if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
+
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
-                    task.wait(.1)
+
+                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel
+                    print("afs")
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
-                    task.wait(3)
-                    break
-            
-                elseif not State then
-                    Options.BossHPBar.Max = MaxHP
-                    Options.BossHPBar.Value = CurrentHP
-                    Options.BossHPBar:Display()
+                    print("afs")
+
+                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible
+                    
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                     break
                 end
             end
@@ -470,6 +663,33 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 end
             else
                 nearest_table = {}
+
+                if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                end
+
+                if DataSave.GoldenTickets == 0 then continue end
+                local BestPet = get_minigame_pet()
+            
+                if Debug then
+                    print(get_minigame_pet())
+                end
+
+                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+                task.wait(.1)
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
+                task.wait(.3)
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content[BestPet].Button.Activated) 
+                task.wait(.1)
+
+                for _,Start in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Tooltip.Frame.Buttons:GetChildren() do
+                    if Start:IsA("Frame") then
+                        if Start.Button.BackgroundColor3 ~= Color3.fromRGB(251, 121, 255) then continue end
+                        
+                        firesignal(Start.Button.Activated)
+                    end
+                end
+                task.wait(3)
             end
         end
     end
@@ -490,7 +710,6 @@ end)
 local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 
 -- I set NoUI so it does not show up in the keybinds menu
-MenuGroup:AddButton('Unload', function() Library:Unload() 
-end)
-
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddButton('Debug Mode', function() Debug = not Debug end)
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' })

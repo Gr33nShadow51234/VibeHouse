@@ -33,6 +33,12 @@ local PetRender = require(game:GetService("ReplicatedStorage").Client.Pets.PetRe
 local WorldPets = PetRender.WorldPets
 local PlayerChar = game.Players.LocalPlayer.Character
 local PetRarity = {"Secret","Legendary","Epic","Rare","Common"}
+local ShopRespawn = {
+    ["gem-trader"] = 3600,
+    ["magic-shop"] = 3600,
+    ["auburn-shop"] = 1200,
+    ["the-blackmarket"] = 7200
+}
 local CubeRarity = {"Legendary","Epic","Rare","Common"}
 local PetTable = require(game:GetService("ReplicatedStorage").Shared.Data.Pets)
 local nearest_table = {}
@@ -42,6 +48,7 @@ local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
 local BossAreas = workspace.Bosses
 local Bosses = {"king-slime","the-kraken"}
 local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
+
 local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Left.Button
 local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
 local BossBypass = false
@@ -52,11 +59,12 @@ local InsideBoss = false
 
 
 function empty() end
+function set_table(path) local Temp = {}; for i,v in path:GetChildren() do table.insert(Temp, v.Name) end; return Temp end
 -- Functions
 function find_nearest_enemy()
     local nearest, rarity, nearest_distance = nil, "Common", math.huge
     for i,v in WorldPets do
-        local dist = (PlayerPart.Position - v.Model.PrimaryPart.Position).Magnitude
+        local dist = (PlayerChar.HumanoidRootPart.Position - v.Model.PrimaryPart.Position).Magnitude
         local Rarity = PetTable[v.Name].Rarity
         if dist > nearest_distance then continue end
         nearest = v
@@ -222,10 +230,10 @@ local Tabs = {
 -- Groups
 local GeneralBox = Tabs.Main:AddLeftGroupbox('General')
 local PetBox = Tabs.Main:AddLeftGroupbox('Pets')
-local CraftBox = Tabs.Main:AddLeftTabbox('Crafting')
-local MobBossBox = Tabs.Main:AddRightTabbox('Mob&Boss')
+local FishBox = Tabs.Main:AddLeftGroupbox('Fish')
 
-local FishBox = Tabs.Main:AddRightGroupbox('Fish')
+local MobBossBox = Tabs.Main:AddRightTabbox('Mob&Boss')
+local CraftBox = Tabs.Main:AddRightTabbox('Crafting')
 local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 local MerchantBox = Tabs.Main:AddRightGroupbox('Merchants')
 
@@ -234,7 +242,7 @@ local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
 local MobTab = MobBossBox:AddTab('Mobs')
-local BossTab = MobBossBox:AddTab('Bosse')
+local BossTab = MobBossBox:AddTab('Bosses')
 -- toggles
 GeneralBox:AddToggle('AutoCollect', {
     Text = 'Auto Collect',
@@ -530,6 +538,20 @@ CraftSlot3:AddToggle('AutoCraftClaim3', {
     Tooltip = '', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
+    end
+})
+
+
+MerchantBox:AddDropdown('TPDropdown', {
+    Values = set_table(workspace.Activations),
+    Default = 1, -- number index of the value / string
+    Multi = false, -- true / false, allows multiple choices to be selected
+
+    Text = 'Teleport to Shops',
+    Tooltip = 'Choose Teleport', -- Information shown when you hover over the dropdown
+
+    Callback = function(Value)
+        PlayerChar.HumanoidRootPart.Position = workspace.Activations[Value].WorldPivot.Position
     end
 })
 

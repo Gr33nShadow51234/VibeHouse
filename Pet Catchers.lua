@@ -23,11 +23,14 @@ local Debug = false
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
 local CraftingList = DataSave.Crafting
-
+local Index = DataSave.Index
+local Shops = DataSave.Shops
+local ScreenTransition = require(game:GetService("ReplicatedStorage").Client.Gui.ScreenTransition)
 local ShrinesTable = require(game:GetService("ReplicatedStorage").Shared.Data.Shrines)
 local ChestTable = require(game:GetService("ReplicatedStorage").Shared.Data.Chests)
 local Fish = require(game:GetService("ReplicatedStorage").Client.Handlers.Fishing)
 local PetRender = require(game:GetService("ReplicatedStorage").Client.Pets.PetRender)
+local WorldPets = PetRender.WorldPets
 local PlayerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 local PetRarity = {"Secret","Legendary","Epic","Rare","Common"}
 local CubeRarity = {"Legendary","Epic","Rare","Common"}
@@ -42,10 +45,14 @@ local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Boss
 local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
 local InsideBoss = false
 local InsideMinigame = false
+
+
+
+function empty() end
 -- Functions
 function find_nearest_enemy()
     local nearest, rarity, nearest_distance = nil, "Common", math.huge
-    for i,v in PetRender.WorldPets do
+    for i,v in WorldPets do
         local dist = (PlayerPart.Position - v.Model.PrimaryPart.Position).Magnitude
         local Rarity = PetTable[v.Name].Rarity
         if dist > nearest_distance then continue end
@@ -58,7 +65,7 @@ end
 
 function find_highest_enemy()
     local highest, highest_rarity = nil, "Common"
-    for i,v in PetRender.WorldPets do
+    for i,v in WorldPets do
         local Rarity = PetTable[v.Name].Rarity
         if table.find(PetRarity, Rarity) > table.find(PetRarity, highest_rarity) then continue end
         highest = v
@@ -69,7 +76,7 @@ end
 
 function find_lowest_enemy()
     local highest, highest_rarity = nil, "Secret"
-    for i,v in PetRender.WorldPets do
+    for i,v in WorldPets do
         local Rarity = PetTable[v.Name].Rarity
         if table.find(PetRarity, Rarity) < table.find(PetRarity, highest_rarity) then continue end
         highest = v
@@ -80,7 +87,7 @@ end
 
 function find_shiny_enemy()
     local shiny = nil
-    for i,v in PetRender.WorldPets do
+    for i,v in WorldPets do
         if not v.Shiny then continue end
 
         shiny = v
@@ -90,12 +97,34 @@ end
 
 function find_rare_enemy()
     local rare = nil
-    for i,v in PetRender.WorldPets do
+    for i,v in WorldPets do
         if PetTable[v.Name].Rarity == "Legendary" or PetTable[v.Name].Rarity == "Secret" then
             rare = v
         end
     end
     return rare
+end
+
+function get_index_pet()
+    local index_pet = nil
+
+    for i,v in WorldPets do
+        local Version = "Normal"
+
+        if v.Shiny then
+            Version = "Shiny"
+        end
+
+        if Index[v.Name][Version].Caught == 0 then
+            index_pet = v
+            
+            if Debug then
+                print(Version, v.Name ,Index[v.Name][Version].Caught)
+            end
+        end
+    end
+
+    return index_pet
 end
 
 function find_nearest_monster()
@@ -192,11 +221,13 @@ local CraftBox = Tabs.Main:AddLeftTabbox('Crafting')
 local MobsBox = Tabs.Main:AddRightGroupbox('Mobs')
 local FishBox = Tabs.Main:AddRightGroupbox('Fish')
 local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
+local MerchantBox = Tabs.Main:AddRightGroupbox('Merchants')
 
 -- Group Tabs
 local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
+
 -- toggles
 GeneralBox:AddToggle('AutoCollect', {
     Text = 'Auto Collect',
@@ -253,6 +284,14 @@ PetBox:AddToggle('PrioritizeShiny', {
     Callback = function(Value)
     end
 })
+PetBox:AddToggle('PrioritizeIndex', {
+    Text = 'Prioritize Index',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Prioritize Index', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
 PetBox:AddToggle('AutoCatch', {
     Text = 'Auto Catch',
     Default = false, -- Default value (true / false)
@@ -301,7 +340,7 @@ FishBox:AddToggle('AutoFishSell', {
 })
 
 MobsBox:AddToggle('AutoBosslvl25', {
-    Text = 'Auto Boss lvl 25',
+    Text = 'Set Max lvl 25',
     Default = false, -- Default value (true / false)
     Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
 
@@ -392,7 +431,6 @@ CraftSlot1:AddSlider('SelectAmount1', {
     Compact = false,
 
     Callback = function(Value)
-        print('[cb] MySlider was changed! New value:', Value)
     end
 })
 CraftSlot1:AddToggle('AutoCraftClaim1', {
@@ -424,7 +462,6 @@ CraftSlot2:AddSlider('SelectAmount2', {
     Compact = false,
 
     Callback = function(Value)
-        print('[cb] MySlider was changed! New value:', Value)
     end
 })
 CraftSlot2:AddToggle('AutoCraftClaim2', {
@@ -456,7 +493,6 @@ CraftSlot3:AddSlider('SelectAmount3', {
     Compact = false,
 
     Callback = function(Value)
-        print('[cb] MySlider was changed! New value:', Value)
     end
 })
 CraftSlot3:AddToggle('AutoCraftClaim3', {
@@ -468,6 +504,38 @@ CraftSlot3:AddToggle('AutoCraftClaim3', {
     end
 })
 
+MerchantBox:AddToggle('BLACKMARKET', {
+    Text = 'Buy Blackmarket',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+MerchantBox:AddToggle('GTrader', {
+    Text = 'Buy Gem Trader',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+MerchantBox:AddToggle('MShop', {
+    Text = 'Buy Magic Shop',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+MerchantBox:AddToggle('AShop', {
+    Text = 'Buy Auburn Shop',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
 
 table.insert(Threads, task.spawn(function() --AutoCollect
     while task.wait() do
@@ -529,29 +597,41 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                         print("SHINY!!!!!!!!!!!!!!!!!!!")
                     end
                 end
-            end
-            if Toggles.PrioritizeRare.Value then 
-
+            elseif Toggles.PrioritizeRare.Value then 
                 if find_rare_enemy() then
                     Pet = find_rare_enemy()
                     Cube = get_highest_ball()
                     PRIO = true
+
                     if Debug then
-                        print("Leg / Secret")
+                        print("LEG / SECRET")
+                    end
+                end
+            elseif Toggles.PrioritizeIndex.Value then 
+                if get_index_pet() then
+                    Pet = get_index_pet()
+                    Cube = get_highest_ball()
+                    PRIO = true
+
+                    if Debug then
+                        print("INDEX PET")
                     end
                 end
             end
 
-            print(find_highest_enemy())
+
             repeat
                 if not PRIO then
                     if Toggles.PrioritizeShiny.Value then 
                         if find_shiny_enemy() then
                             STOP = true
                         end
-                    end
-                    if Toggles.PrioritizeRare.Value then 
+                    elseif Toggles.PrioritizeRare.Value then 
                         if find_rare_enemy() then
+                            STOP = true
+                        end
+                    elseif Toggles.PrioritizeIndex.Value then 
+                        if get_index_pet() then
                             STOP = true
                         end
                     end
@@ -565,7 +645,7 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                 task.wait()
             until success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
             
-            if Pet.Model.Parent ~= nil then
+            if Pet.Model.Parent ~= nil and success then
                 Pet.Model:Destroy()
             end
 
@@ -660,9 +740,16 @@ table.insert(Threads, task.spawn(function() --AutoShrines
             for i,v in DataSave.Shrines do
                 local unixT = os.time()
                 local Time = v.LastUpdateTime + v.Duration
+                local TicketsAmount = (DataSave.GoldenTickets) or 0
+
                 if os.time() >= v.LastUpdateTime + v.Duration then
+                    if i == ticket and TicketsAmount >= 6 then continue end
+
                     game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("UseShrine",i)
-                    print(i)
+                    
+                    if Debug then
+                        print(i)
+                    end
                 end
             end
         end
@@ -681,15 +768,12 @@ end))
 table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
         if Toggles.AutoBoss.Value then
-            if InsideMinigame then continue end
 
             for i,v in Bosses do
                 local State, CurrentHP, MaxHP = canDoBoss()
                 if State then
                     if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
                     if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
-
-                    InsideBoss = true
 
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
 
@@ -712,18 +796,54 @@ table.insert(Threads, task.spawn(function() --AutoBoss
                         end
                     end
 
-                    print(success)
+                    if Debug then
+                        print(success)
+                    end
+
                     repeat task.wait() until success or not Toggles.AutoBoss.Value
                     if not Toggles.AutoBoss.Value then break end
 
-                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+                    local old; old = hookfunction(ScreenTransition, function(...)
+                        local Table = {...}
+                
+                        getupvalue(Table[1], 4).FallingAttack = empty
+                        getupvalue(Table[1], 4).JumpAttack = empty
+                        getupvalue(Table[1], 4).SlamAttack = empty
+                        getupvalue(Table[1], 4).SetAngry = empty
+                        
+                        if Debug then
+                            print("Used")
+                        end
 
-                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
+                        return old(...)
+                    end)
+
+                    if Debug then
+                        print("HOOKED")
+                    end
+                    
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+                    task.wait(1)
+                    hookfunction(ScreenTransition, old)
+
+                    if Debug then
+                        print("REWOKED")
+                    end
+
+                    if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
+                        game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
+                    end
+
+                    repeat 
+                        task.wait() 
+                        if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
+                            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
+                        end
+                    until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
                     if not Toggles.AutoBoss.Value then break end
 
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                     task.wait(2)
-                    InsideBoss = false
 
                     break
                 end
@@ -764,13 +884,8 @@ end))
 table.insert(Threads, task.spawn(function() --AutoDigSite
     while task.wait() do
         if Toggles.DigSite.Value then
-            local State, CurrentHP, MaxHP = canDoBoss()
-
-            if InsideBoss then continue end
-
-            if not Toggles.DigSite.Value then break end
-
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
+                
                 repeat 
                     for i,v in workspace.Rendered.Generic:GetChildren() do
                         if v:IsA("Part") and v.Name == "Glow" then
@@ -796,26 +911,20 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
 
                 until not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible
 
-                repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible 
-                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                if Debug then
+                    print("FINISHED GAME!!!")
+                end
+                task.wait(4)
 
-                print("FINISHED GAME!!!")
-                task.wait(5)
-
-                InsideMinigame = false
             else
                 nearest_table = {}
-
-                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.HUD.Visible then continue end
-                if not Toggles.DigSite.Value then break end
 
                 if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
                     firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                     task.wait(2)
                 end
-                if not Toggles.DigSite.Value then break end
-
                 if DataSave.GoldenTickets == 0 then continue end
+
                 local BestPet = get_minigame_pet()
             
                 if Debug then
@@ -823,8 +932,6 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 end
 
                 if not Toggles.DigSite.Value then break end
-                
-                InsideMinigame = true
                 
 
                 if not game:GetService("UserInputService").TouchEnabled then
@@ -854,6 +961,70 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
         end
     end
 end))
+table.insert(Threads, task.spawn(function() --BLACKMARKET
+    while task.wait() do
+        if Toggles.BLACKMARKET.Value then
+            for i2,v2 in Shops["the-blackmarket"].Bought do
+                local args = {
+                    [1] = "BuyShopItem",
+                    [2] = "the-blackmarket",
+                    [3] = i2
+                }
+                
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+            end
+            task.wait(1)
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Aauburn-shop
+    while task.wait() do
+        if Toggles.AShop.Value then
+            for i2,v2 in Shops["auburn-shop"].Bought do
+                local args = {
+                    [1] = "BuyShopItem",
+                    [2] = "auburn-shop",
+                    [3] = i2
+                }
+                
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+            end
+            task.wait(1)
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Amagic-shop
+    while task.wait() do
+        if Toggles.MShop.Value then
+            for i2,v2 in Shops["magic-shop"].Bought do
+                local args = {
+                    [1] = "BuyShopItem",
+                    [2] = "magic-shop",
+                    [3] = i2
+                }
+                
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+            end
+            task.wait(1)
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Agem-trader
+    while task.wait() do
+        if Toggles.GTrader.Value then
+            for i2,v2 in Shops["gem-trader"].Bought do
+                local args = {
+                    [1] = "BuyShopItem",
+                    [2] = "gem-trader",
+                    [3] = i2
+                }
+                
+                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+            end
+            task.wait(1)
+        end
+    end
+end))
 
 Library:OnUnload(function()
     print('Unloaded!')
@@ -871,5 +1042,9 @@ local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 
 -- I set NoUI so it does not show up in the keybinds menu
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddButton('Debug Mode', function() Debug = not Debug end)
+local DebugMode; DebugMode = MenuGroup:AddButton('Debug Mode: ' .. tostring(Debug), 
+function() 
+    Debug = not Debug
+    DebugMode.Label.Text = 'Debug Mode: ' .. tostring(Debug)
+end)
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' })

@@ -31,21 +31,24 @@ local ChestTable = require(game:GetService("ReplicatedStorage").Shared.Data.Ches
 local Fish = require(game:GetService("ReplicatedStorage").Client.Handlers.Fishing)
 local PetRender = require(game:GetService("ReplicatedStorage").Client.Pets.PetRender)
 local WorldPets = PetRender.WorldPets
-local PlayerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+local PlayerChar = game.Players.LocalPlayer.Character
 local PetRarity = {"Secret","Legendary","Epic","Rare","Common"}
 local CubeRarity = {"Legendary","Epic","Rare","Common"}
 local PetTable = require(game:GetService("ReplicatedStorage").Shared.Data.Pets)
 local nearest_table = {}
 local Invoke = game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Function")
+local Remote = game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event")
 local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
 local BossAreas = workspace.Bosses
 local Bosses = {"king-slime","the-kraken"}
 local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
 local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Left.Button
 local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
-local InsideBoss = false
+local BossBypass = false
+local WaitJoinMinigame = false
+local WaitJoinBoss = false
 local InsideMinigame = false
-
+local InsideBoss = false
 
 
 function empty() end
@@ -97,6 +100,7 @@ end
 
 function find_rare_enemy()
     local rare = nil
+    print(WorldPets)
     for i,v in WorldPets do
         if PetTable[v.Name].Rarity == "Legendary" or PetTable[v.Name].Rarity == "Secret" then
             rare = v
@@ -130,7 +134,7 @@ end
 function find_nearest_monster()
     local nearest, nearest_distance = nil, math.huge
     for i,v in workspace.Rendered.Enemies:GetChildren() do
-        local dist = (PlayerPart.Position - v.WorldPivot.Position).Magnitude
+        local dist = (PlayerChar.HumanoidRootPart.Position - v.WorldPivot.Position).Magnitude
         if dist > nearest_distance then continue end
         nearest = v
         nearest_distance = dist
@@ -211,6 +215,7 @@ end
 -- Tabs
 local Tabs = {
     ['Main'] = Window:AddTab('Main'),
+    ['Stat'] = Window:AddTab('Stat'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
@@ -218,7 +223,8 @@ local Tabs = {
 local GeneralBox = Tabs.Main:AddLeftGroupbox('General')
 local PetBox = Tabs.Main:AddLeftGroupbox('Pets')
 local CraftBox = Tabs.Main:AddLeftTabbox('Crafting')
-local MobsBox = Tabs.Main:AddRightGroupbox('Mobs')
+local MobBossBox = Tabs.Main:AddRightTabbox('Mob&Boss')
+
 local FishBox = Tabs.Main:AddRightGroupbox('Fish')
 local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 local MerchantBox = Tabs.Main:AddRightGroupbox('Merchants')
@@ -227,7 +233,8 @@ local MerchantBox = Tabs.Main:AddRightGroupbox('Merchants')
 local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
 local CraftSlot3 = CraftBox:AddTab('Slot 3')
-
+local MobTab = MobBossBox:AddTab('Mobs')
+local BossTab = MobBossBox:AddTab('Bosse')
 -- toggles
 GeneralBox:AddToggle('AutoCollect', {
     Text = 'Auto Collect',
@@ -245,12 +252,27 @@ GeneralBox:AddToggle('AutoShrines', {
     Callback = function(Value)
     end
 })
+GeneralBox:AddToggle('Godmode1', {
+    Text = 'Godmode #1',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Invis Shield', -- Information shown when you hover over the toggle
 
+    Callback = function(Value)
+    end
+})
+GeneralBox:AddToggle('Godmode2', {
+    Text = 'Godmode #2',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Set Health', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
 local AutoChest = GeneralBox:AddButton({
     Text = 'Auto Chest',
     Func = function()
         for i,v in ChestTable do
-            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("OpenWorldChest",i)
+            Remote:FireServer("OpenWorldChest",i)
         end
     end,
     DoubleClick = false,
@@ -338,8 +360,15 @@ FishBox:AddToggle('AutoFishSell', {
     Callback = function(Value)
     end
 })
+BossTab:AddToggle('DigsiteBoss', {
+    Text = 'Support for Boss + Minigame',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Removes Kraken Attacks', -- Information shown when you hover over the toggle
 
-MobsBox:AddToggle('AutoBosslvl25', {
+    Callback = function(Value)
+    end
+})
+BossTab:AddToggle('AutoBosslvl25', {
     Text = 'Set Max lvl 25',
     Default = false, -- Default value (true / false)
     Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
@@ -348,7 +377,7 @@ MobsBox:AddToggle('AutoBosslvl25', {
     end
 })
 
-MobsBox:AddToggle('AutoBoss', {
+BossTab:AddToggle('AutoBoss', {
     Text = 'Auto Boss',
     Default = false, -- Default value (true / false)
     Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
@@ -356,7 +385,15 @@ MobsBox:AddToggle('AutoBoss', {
     Callback = function(Value)
     end
 })
-MobsBox:AddToggle('RespawnKraken', {
+BossTab:AddToggle('DisableKraken', {
+    Text = 'Disable Kraken',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Removes Kraken Attacks', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    end
+})
+BossTab:AddToggle('RespawnKraken', {
     Text = 'Respawn Kraken',
     Default = false, -- Default value (true / false)
     Tooltip = 'Respawn Kraken', -- Information shown when you hover over the toggle
@@ -364,7 +401,7 @@ MobsBox:AddToggle('RespawnKraken', {
     Callback = function(Value)
     end
 })
-MobsBox:AddToggle('RespawnSlime', {
+BossTab:AddToggle('RespawnSlime', {
     Text = 'Respawn Slime',
     Default = false, -- Default value (true / false)
     Tooltip = 'Respawn Slime', -- Information shown when you hover over the toggle
@@ -374,7 +411,7 @@ MobsBox:AddToggle('RespawnSlime', {
 })
 
 
-MobsBox:AddToggle('TPMobs', {
+MobTab:AddToggle('TPMobs', {
     Text = 'TP to Mobs',
     Default = false, -- Default value (true / false)
     Tooltip = 'Teleport to mobs', -- Information shown when you hover over the toggle
@@ -383,16 +420,8 @@ MobsBox:AddToggle('TPMobs', {
     end
 })
 
-MobsBox:AddToggle('Godmode', {
-    Text = 'Godmode',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'Literally God', -- Information shown when you hover over the toggle
 
-    Callback = function(Value)
-    end
-})
-
-MobsBox:AddToggle('BossGodmode', {
+BossTab:AddToggle('BossGodmode', {
     Text = 'Boss Godmode',
     Default = false, -- Default value (true / false)
     Tooltip = 'Only for Bosses', -- Information shown when you hover over the toggle
@@ -539,490 +568,508 @@ MerchantBox:AddToggle('AShop', {
 
 table.insert(Threads, task.spawn(function() --AutoCollect
     while task.wait() do
-        if Toggles.AutoCollect.Value then
-            for i,v in workspace.Rendered.Pickups:GetChildren() do
-                v.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-            end
+        if not Toggles.AutoCollect.Value then continue end
+
+        for i,v in workspace.Rendered.Pickups:GetChildren() do
+            v.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoCatch
     while task.wait() do
-        if Toggles.AutoCatch.Value then
-            if InsideBoss then continue end
-            if InsideMinigame then continue end
+        if not Toggles.AutoCatch.Value then continue end
 
-            local Pet = nil
-            local success = false
-            local Rarity = nil
-            local Cube = "Common"
-            local STOP = false
-            local PRIO = false
+        local Pet = nil
+        local success = false
+        local Rarity = nil
+        local Cube = "Common"
+        local STOP = false
+        local PRIO = false
 
-            if Debug then
-                print(Options.ModeDropdown.Value)
-            end
+        if Debug then
+            print(Options.ModeDropdown.Value)
+        end
 
-            if Options.ModeDropdown.Value == "Nearest" then
-                Pet, Rarity = find_nearest_enemy()
-
-                if Debug then
-                    print(find_nearest_enemy())
-                end
-            elseif Options.ModeDropdown.Value == "Highest Star" then
-                Pet, Rarity = find_highest_enemy()
-
-                if Debug then
-                    print(find_highest_enemy())
-                end
-            elseif Options.ModeDropdown.Value == "Lowest Star" then
-                Pet, Rarity = find_lowest_enemy()
-
-                if Debug then
-                    print(find_lowest_enemy())
-                end
-            end
-            --local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
-
-            --Pet.Model.PrimaryPart.Transparency = 0.2
-            --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
-
-            if Toggles.PrioritizeShiny.Value then 
-                if find_shiny_enemy() then
-                    Pet = find_shiny_enemy()
-                    Cube = "Epic"
-                    PRIO = true
-
-                    if Debug then
-                        print("SHINY!!!!!!!!!!!!!!!!!!!")
-                    end
-                end
-            elseif Toggles.PrioritizeRare.Value then 
-                if find_rare_enemy() then
-                    Pet = find_rare_enemy()
-                    Cube = get_highest_ball()
-                    PRIO = true
-
-                    if Debug then
-                        print("LEG / SECRET")
-                    end
-                end
-            elseif Toggles.PrioritizeIndex.Value then 
-                if get_index_pet() then
-                    Pet = get_index_pet()
-                    Cube = get_highest_ball()
-                    PRIO = true
-
-                    if Debug then
-                        print("INDEX PET")
-                    end
-                end
-            end
-
-
-            repeat
-                if not PRIO then
-                    if Toggles.PrioritizeShiny.Value then 
-                        if find_shiny_enemy() then
-                            STOP = true
-                        end
-                    elseif Toggles.PrioritizeRare.Value then 
-                        if find_rare_enemy() then
-                            STOP = true
-                        end
-                    elseif Toggles.PrioritizeIndex.Value then 
-                        if get_index_pet() then
-                            STOP = true
-                        end
-                    end
-
-                    if table.find(PetRarity, Rarity) <= 2 then
-                        Cube = get_highest_ball()
-                    end
-                end
-
-                success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
-                task.wait()
-            until success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP or InsideBoss or InsideMinigame
-            
-            if Pet.Model.Parent ~= nil and success then
-                Pet.Model:Destroy()
-            end
-
-            --Pet.Model.PrimaryPart.Transparency = old1
-            --Pet.Model.PrimaryPart.Color = old2
+        if Options.ModeDropdown.Value == "Nearest" then
+            Pet, Rarity = find_nearest_enemy()
 
             if Debug then
-                print("GOTCHA")
+                print(find_nearest_enemy())
             end
+        elseif Options.ModeDropdown.Value == "Highest Star" then
+            Pet, Rarity = find_highest_enemy()
+
+            if Debug then
+                print(find_highest_enemy())
+            end
+        elseif Options.ModeDropdown.Value == "Lowest Star" then
+            Pet, Rarity = find_lowest_enemy()
+
+            if Debug then
+                print(find_lowest_enemy())
+            end
+        end
+        --local old1, old2 = Pet.Model.PrimaryPart.Transparency, Pet.Model.PrimaryPart.Color
+
+        --Pet.Model.PrimaryPart.Transparency = 0.2
+        --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
+
+        if Toggles.PrioritizeShiny.Value then 
+            if find_shiny_enemy() then
+                Pet = find_shiny_enemy()
+                Cube = "Epic"
+                PRIO = true
+
+                if Debug then
+                    print("SHINY!!!!!!!!!!!!!!!!!!!")
+                end
+            end
+        elseif Toggles.PrioritizeRare.Value then 
+            if find_rare_enemy() then
+                Pet = find_rare_enemy()
+                Cube = get_highest_ball()
+                PRIO = true
+
+                if Debug then
+                    print("LEG / SECRET")
+                end
+            end
+        elseif Toggles.PrioritizeIndex.Value then 
+            if get_index_pet() then
+                Pet = get_index_pet()
+                Cube = get_highest_ball()
+                PRIO = true
+
+                if Debug then
+                    print("INDEX PET")
+                end
+            end
+        end
+        
+        while task.wait() do
+            if success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP then break end
+
+            if not PRIO then
+                if Toggles.PrioritizeShiny.Value then 
+                    if find_shiny_enemy() then
+                        STOP = true
+                    end
+                elseif Toggles.PrioritizeRare.Value then 
+                    if find_rare_enemy() then
+                        STOP = true
+                    end
+                elseif Toggles.PrioritizeIndex.Value then 
+                    if get_index_pet() then
+                        STOP = true
+                    end
+                end
+
+                if table.find(PetRarity, Rarity) <= 2 then
+                    Cube = get_highest_ball()
+                end
+            end
+            success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
+        end
+
+        if Pet.Model.Parent ~= nil and success then
+            Pet.Model:Destroy()
+        end
+
+        --Pet.Model.PrimaryPart.Transparency = old1
+        --Pet.Model.PrimaryPart.Color = old2
+
+        if Debug then
+            print("GOTCHA")
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoCraftClaim1
     while task.wait() do
-        if Toggles.AutoCraftClaim1.Value then
-            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Craft.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 1, Options.SelectRecipe1.Value, Options.SelectAmount1.Value)   
-            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Claim.Visible then
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 1)
-            else 
-                if Debug then
-                    print("Wait Slot 1")
-                end
+        if not Toggles.AutoCraftClaim1.Value then continue end
+
+        if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Craft.Visible then 
+            Remote:FireServer("StartCrafting", 1, Options.SelectRecipe1.Value, Options.SelectAmount1.Value)   
+        elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot1.Content.Claim.Visible then
+            Remote:FireServer("ClaimCrafting", 1)
+        else 
+            if Debug then
+                print("Wait Slot 1")
             end
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoCraftClaim2
     while task.wait() do
-        if Toggles.AutoCraftClaim2.Value then
-            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Craft.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 2, Options.SelectRecipe2.Value, Options.SelectAmount2.Value)  
-            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Claim.Visible then
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 2)
-            else 
-                if Debug then
-                    print("Wait Slot 2")
-                end
+        if not Toggles.AutoCraftClaim2.Value then continue end
+
+        if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Craft.Visible then 
+            Remote:FireServer("StartCrafting", 2, Options.SelectRecipe2.Value, Options.SelectAmount2.Value)  
+        elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot2.Content.Claim.Visible then
+            Remote:FireServer("ClaimCrafting", 2)
+        else 
+            if Debug then
+                print("Wait Slot 2")
             end
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoCraftClaim3
     while task.wait() do
-        if Toggles.AutoCraftClaim3.Value then
-            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Craft.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCrafting", 3, Options.SelectRecipe3.Value, Options.SelectAmount3.Value)  
-            elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Claim.Visible then
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("ClaimCrafting", 3)
-            else 
-                if Debug then
-                    print("Wait Slot 3")
-                end
+        if not Toggles.AutoCraftClaim3.Value then continue end
+        
+        if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Craft.Visible then 
+            Remote:FireServer("StartCrafting", 3, Options.SelectRecipe3.Value, Options.SelectAmount3.Value)  
+        elseif game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Crafting.Frame.Body.Slot3.Content.Claim.Visible then
+            Remote:FireServer("ClaimCrafting", 3)
+        else 
+            if Debug then
+                print("Wait Slot 3")
             end
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --Godmode
+table.insert(Threads, task.spawn(function() --Godmode1
     while task.wait() do
-        if Toggles.Godmode.Value then
-            game.Players.LocalPlayer.Character.Humanoid.Health = math.huge
+        if not Toggles.Godmode1.Value then continue end
+
+        if not PlayerChar:FindFirstChild("Fishy Capsule") then
+            local Y = Instance.new("ForceField", PlayerChar)
+            Y.Name = "Fishy Capsule"
+            Y.Visible = false
         end
+    end
+end))
+table.insert(Threads, task.spawn(function() --Godmode2
+    while task.wait() do
+        if not Toggles.Godmode2.Value then continue end
+
+        PlayerChar.Humanoid.Health = PlayerChar.Humanoid.MaxHealth
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoOpen
     while task.wait() do
-        if Toggles.AutoOpen.Value then
-            if Options.EggDropdown.Value == "" then continue end
-            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Function"):InvokeServer("TryHatchEgg",Options.EggDropdown.Value)            
-        end
+        if not Toggles.AutoOpen.Value then continue end
+
+        if Options.EggDropdown.Value == "" then continue end
+        Invoke:InvokeServer("TryHatchEgg",Options.EggDropdown.Value)            
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoFish
     while task.wait() do
-        if Toggles.AutoFish.Value then
-            if Fish.Casting then continue end
-            Fish.Casting = true
-            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("StartCastFishing")
-        end
+        if not Toggles.AutoFish.Value then continue end
+
+        if Fish.Casting then continue end
+        Fish.Casting = true
+        Remote:FireServer("StartCastFishing")
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoFishSell
     while task.wait() do
-        if Toggles.AutoFishSell.Value then
-            game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("SellFish")
-        end
+        if not Toggles.AutoFishSell.Value then continue end
+
+        Remote:FireServer("SellFish")
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoShrines
     while task.wait() do
-        if Toggles.AutoShrines.Value then
-            for i,v in DataSave.Shrines do
-                local unixT = os.time()
-                local Time = v.LastUpdateTime + v.Duration
-                local TicketsAmount = (DataSave.GoldenTickets) or 0
+        if not Toggles.AutoShrines.Value then continue end
 
-                if os.time() >= v.LastUpdateTime + v.Duration then
-                    if i == ticket and TicketsAmount >= 6 then continue end
+        for i,v in DataSave.Shrines do
+            local TicketsAmount = (DataSave.GoldenTickets) or 0
 
-                    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("UseShrine",i)
-                    
-                    if Debug then
-                        print(i)
-                    end
-                end
+            if os.time() < v.LastUpdateTime + v.Duration then continue end
+            if i == ticket and TicketsAmount >= 6 then continue end
+
+            Remote:FireServer("UseShrine",i)
+            
+            if Debug then
+                print(i)
             end
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --TPMobs
     while task.wait() do
-        if Toggles.TPMobs.Value then
-            local Monster = find_nearest_monster()
-            if Monster then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Monster.WorldPivot.Position) * CFrame.new(0, 15, 0)
-            end
-        end
+        if not Toggles.TPMobs.Value then continue end
+        local Monster = find_nearest_monster()
+
+        if not Monster then continue end
+            
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Monster.WorldPivot.Position) * CFrame.new(0, 15, 0)
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoBoss
     while task.wait() do
-        if Toggles.AutoBoss.Value then
+        if not Toggles.AutoBoss.Value then continue end
 
-            for i,v in Bosses do
-                local State, CurrentHP, MaxHP = canDoBoss()
-                if State then
-                    if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
-                    if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
+        for i,v in Bosses do
+            local State, CurrentHP, MaxHP = canDoBoss()
+            local TicketsAmount = (DataSave.GoldenTickets) or 0
 
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
+            if not State then continue end
 
-                    repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Visible == true or not Toggles.AutoBoss.Value
-                    if not Toggles.AutoBoss.Value then break end
+            if Toggles.DigsiteBoss.Value then
+                if InsideMinigame then continue end
+                if TicketsAmount > 0 then continue end
+            end
 
-                    local success = nil
+            if workspace.Bosses[v].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
+            if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then continue end
 
-                    if v == "the-kraken" then
-                        if Toggles.AutoBosslvl25.Value then
-                            success = set_boss_page(math.clamp(BossRecords["the-kraken"] + 1, 0, 25))
-                        else
-                            success = set_boss_page(BossRecords["the-kraken"] + 1)
-                        end
-                    elseif v == "king-slime" then
-                        if Toggles.AutoBosslvl25.Value then
-                            success = set_boss_page(math.clamp(BossRecords["king-slime"] + 1, 0, 25))
-                        else
-                            success = set_boss_page(BossRecords["king-slime"] + 1)
-                        end
-                    end
+            WaitJoinBoss = true
 
-                    if Debug then
-                        print(success)
-                    end
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BossAreas[v].Gate.Activation.WorldPivot.Position) * CFrame.new(0, 5, 0)
 
-                    repeat task.wait() until success or not Toggles.AutoBoss.Value
-                    if not Toggles.AutoBoss.Value then break end
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Visible == true or not Toggles.AutoBoss.Value
+            if not Toggles.AutoBoss.Value then break end
 
-                    local old; old = hookfunction(ScreenTransition, function(...)
-                        local Table = {...}
-                
-                        getupvalue(Table[1], 4).FallingAttack = empty
-                        getupvalue(Table[1], 4).JumpAttack = empty
-                        getupvalue(Table[1], 4).SlamAttack = empty
-                        getupvalue(Table[1], 4).SetAngry = empty
-                        
-                        if Debug then
-                            print("Used")
-                        end
+            local success = nil
 
-                        return old(...)
-                    end)
-
-                    if Debug then
-                        print("HOOKED")
-                    end
-                    
-                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
-                    task.wait(1)
-                    hookfunction(ScreenTransition, old)
-
-                    if Debug then
-                        print("REWOKED")
-                    end
-
-                    if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
-                        game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
-                    end
-
-                    repeat 
-                        task.wait() 
-                        if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
-                            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
-                        end
-                    until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
-                    if not Toggles.AutoBoss.Value then break end
-
-                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
-                    task.wait(2)
-
-                    break
+            if v == "the-kraken" then
+                if Toggles.AutoBosslvl25.Value then
+                    success = set_boss_page(math.clamp(BossRecords["the-kraken"] + 1, 0, 25))
+                else
+                    success = set_boss_page(BossRecords["the-kraken"] + 1)
+                end
+            elseif v == "king-slime" then
+                if Toggles.AutoBosslvl25.Value then
+                    success = set_boss_page(math.clamp(BossRecords["king-slime"] + 1, 0, 25))
+                else
+                    success = set_boss_page(BossRecords["king-slime"] + 1)
                 end
             end
+
+            if Debug then
+                print(success)
+            end
+
+            repeat task.wait() until success or not Toggles.AutoBoss.Value
+            if not Toggles.AutoBoss.Value then break end
+
+            if Toggles.DisableKraken.Value then
+                BossBypass = true
+        
+                local old; old = hookfunction(ScreenTransition, function(...)
+                    local Table = {...}
+            
+                    getupvalue(Table[1], 4).FallingAttack = empty
+                    getupvalue(Table[1], 4).JumpAttack = empty
+                    getupvalue(Table[1], 4).SlamAttack = empty
+                    getupvalue(Table[1], 4).SetAngry = empty
+                    
+                    if Debug then
+                        print("Used")
+                    end
+
+                    return old(...)
+                end)
+
+                if Debug then
+                    print("HOOKED")
+                end
+
+                while task.wait() do
+                    if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") then break end
+                    
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+                    task.wait(3)
+                end
+
+                hookfunction(ScreenTransition, old)
+
+                if Debug then
+                    print("REWOKED")
+                end
+
+                task.wait(1)
+                BossBypass = false
+            else
+                local first = false
+                while task.wait() do
+                    if workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") or workspace.Rendered:FindFirstChild("King Slime") then break end
+                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Start.Button.Activated)
+                    task.wait(3)
+                end
+            end
+
+            WaitJoinBoss = false
+
+            repeat 
+                task.wait() 
+                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
+                    game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
+                end
+            until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
+
+            if not Toggles.AutoBoss.Value then break end
+
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+            task.wait(2)
+
+            break
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --BossGodmode
     while task.wait() do
-        if Toggles.BossGodmode.Value then
-            if workspace.Rendered:FindFirstChild("King Slime") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered["King Slime"].PrimaryPart.CFrame * CFrame.new(0, 16, -15)
-            elseif workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") then
-                workspace.Rendered.Generic.Kraken:WaitForChild("Area")
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered.Generic.Kraken.Area.CFrame * CFrame.new(-280, 50, 300)
-            end
+        if not Toggles.BossGodmode.Value then continue end
+
+        if workspace.Rendered:FindFirstChild("King Slime") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered["King Slime"].PrimaryPart.CFrame * CFrame.new(0, 16, -15)
+        elseif workspace.Rendered:FindFirstChild("Generic"):FindFirstChild("Kraken") then
+            workspace.Rendered.Generic.Kraken:WaitForChild("Area")
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Rendered.Generic.Kraken.Area.CFrame * CFrame.new(-280, 50, 300)
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --RespawnKraken
     while task.wait() do
-        if Toggles.RespawnKraken.Value then
-            if workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("RespawnBoss","the-kraken")                
-            end
-        end
+        if not Toggles.RespawnKraken.Value then continue end
+        if not workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end
+
+        Remote:FireServer("RespawnBoss","the-kraken")
     end
 end))
 table.insert(Threads, task.spawn(function() --RespawnSlime
     while task.wait() do
-        if Toggles.RespawnSlime.Value then
-            if workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then 
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("RespawnBoss","king-slime")                
-            end
-        end
+        if not Toggles.RespawnSlime.Value then continue end
+        if not workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Visible then continue end 
+
+        Remote:FireServer("RespawnBoss","king-slime")
     end
 end))
 table.insert(Threads, task.spawn(function() --AutoDigSite
     while task.wait() do
-        if Toggles.DigSite.Value then
-            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
-                
-                repeat 
-                    for i,v in workspace.Rendered.Generic:GetChildren() do
-                        if v:IsA("Part") and v.Name == "Glow" then
-                            local nearest, nearest_distance = nil, math.huge
-                            for i2,v2 in workspace.Map["Dusty Dunes"].Excavation.Tiles:GetChildren() do
-                                local dist = (v.Position - v2.Position).Magnitude
-                                
-                                if dist > nearest_distance then continue end
-                                nearest = v2
-                                nearest_distance = dist
-                            end
-                
-                            if table.find(nearest_table, nearest) then continue end
-                            
-                            table.insert(nearest_table, nearest)
-                        end
-                    end
+        if not Toggles.DigSite.Value then continue end
 
-                    for _,v in nearest_table do
-                        game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer("TryMinigameInput",tostring(v))    
-                    end
-                    task.wait()
-
-                until not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible
-
-                if Debug then
-                    print("FINISHED GAME!!!")
-                end
-                task.wait(4)
-
-            else
-                nearest_table = {}
-
-                if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
-                    firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
-                    task.wait(2)
-                end
-                if DataSave.GoldenTickets == 0 then continue end
-
-                local BestPet = get_minigame_pet()
+        if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then 
             
-                if Debug then
-                    print(get_minigame_pet())
-                end
+            WaitJoinMinigame = false
 
-                if not Toggles.DigSite.Value then break end
-                
+            while task.wait() do
+                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then break end
 
-                if not game:GetService("UserInputService").TouchEnabled then
-                    fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
-                end
-
-                task.wait(.5)
-                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
-                task.wait(.3)
-
-                game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 1, 0, 1)
-                repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content:FindFirstChild(BestPet)
-
-                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content[BestPet].Button.Activated) 
-                task.wait(.1)
-
-                for _,Start in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Tooltip.Frame.Buttons:GetChildren() do
-                    if Start:IsA("Frame") then
-                        if Start.Button.BackgroundColor3 ~= Color3.fromRGB(251, 121, 255) then continue end
+                for i,v in workspace.Rendered.Generic:GetChildren() do
+                    if v:IsA("Part") and v.Name == "Glow" then
+                        local nearest, nearest_distance = nil, math.huge
+                        for i2,v2 in workspace.Map["Dusty Dunes"].Excavation.Tiles:GetChildren() do
+                            local dist = (v.Position - v2.Position).Magnitude
+                            
+                            if dist > nearest_distance then continue end
+                            nearest = v2
+                            nearest_distance = dist
+                        end
+            
+                        if table.find(nearest_table, nearest) then continue end
                         
-                        firesignal(Start.Button.Activated)
+                        table.insert(nearest_table, nearest)
                     end
                 end
-                game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 100, 0, 100)
-                task.wait(3)
+
+                for _,v in nearest_table do
+                    Remote:FireServer("TryMinigameInput",tostring(v))    
+                end
             end
+
+            if Debug then
+                print("FINISHED GAME!!!")
+            end
+            task.wait(4)
+            InsideMinigame = false
+        else
+            nearest_table = {}
+            if BossBypass then continue end
+            if WaitJoinBoss then continue end
+
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                task.wait(2)
+            end
+            if DataSave.GoldenTickets == 0 then continue end
+
+            local BestPet = get_minigame_pet()
+        
+            if Debug then
+                print(get_minigame_pet())
+            end
+
+            if not Toggles.DigSite.Value then break end
+            
+            WaitJoinMinigame = true   
+            InsideMinigame = true
+
+            task.wait(.1)
+
+            if not game:GetService("UserInputService").TouchEnabled then
+                fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+            end
+
+            task.wait(.5)
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
+            task.wait(.3)
+
+            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 1, 0, 1)
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content:FindFirstChild(BestPet)
+
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content[BestPet].Button.Activated) 
+            task.wait(.1)
+
+            for _,Start in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Tooltip.Frame.Buttons:GetChildren() do
+                if Start:IsA("Frame") then
+                    if Start.Button.BackgroundColor3 ~= Color3.fromRGB(251, 121, 255) then continue end
+                    
+                    firesignal(Start.Button.Activated)
+                end
+            end
+            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 100, 0, 100)
+            task.wait(3)
         end
     end
 end))
 table.insert(Threads, task.spawn(function() --BLACKMARKET
     while task.wait() do
-        if Toggles.BLACKMARKET.Value then
-            for i2,v2 in Shops["the-blackmarket"].Bought do
-                local args = {
-                    [1] = "BuyShopItem",
-                    [2] = "the-blackmarket",
-                    [3] = i2
-                }
-                
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
-            end
-            task.wait(1)
+        if not Toggles.BLACKMARKET.Value then continue end
+
+        for i2,v2 in Shops["the-blackmarket"].Bought do
+            local args = {
+                [1] = "BuyShopItem",
+                [2] = "the-blackmarket",
+                [3] = i2
+            }
+            
+            Remote:FireServer(unpack(args))
         end
+        task.wait(1)
     end
 end))
 table.insert(Threads, task.spawn(function() --Aauburn-shop
     while task.wait() do
-        if Toggles.AShop.Value then
-            for i2,v2 in Shops["auburn-shop"].Bought do
-                local args = {
-                    [1] = "BuyShopItem",
-                    [2] = "auburn-shop",
-                    [3] = i2
-                }
-                
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
-            end
-            task.wait(1)
+        if not Toggles.AShop.Value then continue end
+
+        for i2,v2 in Shops["auburn-shop"].Bought do
+            Remote:FireServer("BuyShopItem", "auburn-shop", i2)
         end
+        task.wait(1)
     end
 end))
 table.insert(Threads, task.spawn(function() --Amagic-shop
     while task.wait() do
-        if Toggles.MShop.Value then
-            for i2,v2 in Shops["magic-shop"].Bought do
-                local args = {
-                    [1] = "BuyShopItem",
-                    [2] = "magic-shop",
-                    [3] = i2
-                }
-                
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
-            end
-            task.wait(1)
+        if not Toggles.MShop.Value then continue end
+
+        for i2,v2 in Shops["magic-shop"].Bought do
+            Remote:FireServer("BuyShopItem", "magic-shop", i2)
         end
+        task.wait(1)
     end
 end))
 table.insert(Threads, task.spawn(function() --Agem-trader
     while task.wait() do
-        if Toggles.GTrader.Value then
-            for i2,v2 in Shops["gem-trader"].Bought do
-                local args = {
-                    [1] = "BuyShopItem",
-                    [2] = "gem-trader",
-                    [3] = i2
-                }
-                
-                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
-            end
-            task.wait(1)
+        if not Toggles.GTrader.Value then continue end
+
+        for i2,v2 in Shops["gem-trader"].Bought do
+            Remote:FireServer("BuyShopItem", "gem-trader", i2)
         end
+        task.wait(1)
     end
 end))
 
@@ -1042,8 +1089,7 @@ local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 
 -- I set NoUI so it does not show up in the keybinds menu
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
-local DebugMode; DebugMode = MenuGroup:AddButton('Debug Mode: ' .. tostring(Debug), 
-function() 
+local DebugMode; DebugMode = MenuGroup:AddButton('Debug Mode: ' .. tostring(Debug), function() 
     Debug = not Debug
     DebugMode.Label.Text = 'Debug Mode: ' .. tostring(Debug)
 end)

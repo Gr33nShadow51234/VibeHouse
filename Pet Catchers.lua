@@ -19,6 +19,10 @@ local Window = Library:CreateWindow({
 
 local Threads = {}
 local Debug = false
+
+function empty() end
+function set_table(path) local Temp = {}; for i,v in path:GetChildren() do table.insert(Temp, v.Name) end; return Temp end
+
 -- Locals
 local DataSave = getupvalues(require(game:GetService("ReplicatedStorage").Client.Framework.Services.LocalData).Get)[1]
 local BossRecords = DataSave.BossRecords
@@ -39,6 +43,7 @@ local ShopRespawn = {
     ["auburn-shop"] = 1200,
     ["the-blackmarket"] = 7200
 }
+local AllShrines = set_table(workspace.Shrines)
 local CubeRarity = {"Legendary","Epic","Rare","Common"}
 local PetTable = require(game:GetService("ReplicatedStorage").Shared.Data.Pets)
 local nearest_table = {}
@@ -48,7 +53,7 @@ local BossStuff = require(game:GetService("ReplicatedStorage").Client.Boss)
 local BossAreas = workspace.Bosses
 local Bosses = {"king-slime","the-kraken"}
 local CraftingRecipes = {'rare-cube', 'epic-cube', 'legendary-cube', 'mystery-egg', 'elite-mystery-egg', 'coin-elixir', 'xp-elixir', 'sea-elixir'}
-
+local DanceOrder = {}
 local BossLeft = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Left.Button
 local BossRight = game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossPanel.Frame.Info.Scaling.Right.Button
 local BossBypass = false
@@ -57,9 +62,6 @@ local WaitJoinBoss = false
 local InsideMinigame = false
 local InsideBoss = false
 
-
-function empty() end
-function set_table(path) local Temp = {}; for i,v in path:GetChildren() do table.insert(Temp, v.Name) end; return Temp end
 -- Functions
 function find_nearest_enemy()
     local nearest, rarity, nearest_distance = nil, "Common", math.huge
@@ -446,7 +448,14 @@ MinigameBox:AddToggle('DigSite', {
     Callback = function(Value)
     end
 })
+MinigameBox:AddToggle('DanceOff', {
+    Text = 'Auto Dance Off',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', -- Information shown when you hover over the toggle
 
+    Callback = function(Value)
+    end
+})
 
 CraftSlot1:AddDropdown('SelectRecipe1', {
     Values = CraftingRecipes,
@@ -795,17 +804,20 @@ end))
 table.insert(Threads, task.spawn(function() --AutoShrines
     while task.wait() do
         if not Toggles.AutoShrines.Value then continue end
+        for i,v in AllShrines do
+            if not DataSave.Shrines[v] then 
+                Remote:FireServer("UseShrine",v)
+            else
+                local TicketsAmount = (DataSave.GoldenTickets) or 0
 
-        for i,v in DataSave.Shrines do
-            local TicketsAmount = (DataSave.GoldenTickets) or 0
+                if os.time() < DataSave.Shrines[v].LastUpdateTime + DataSave.Shrines[v].Duration then continue end
+                if v == "ticket" and TicketsAmount >= 6 then continue end
 
-            if os.time() < v.LastUpdateTime + v.Duration then continue end
-            if i == ticket and TicketsAmount >= 6 then continue end
-
-            Remote:FireServer("UseShrine",i)
-            
-            if Debug then
-                print(i)
+                Remote:FireServer("UseShrine",v)
+                
+                if Debug then
+                    print(v)
+                end
             end
         end
     end
@@ -985,6 +997,10 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                         if table.find(nearest_table, nearest) then continue end
                         
                         table.insert(nearest_table, nearest)
+
+                        task.delay(5, function ()
+                            table.remove(nearest_table, nearest)
+                        end)
                     end
                 end
 
@@ -1024,6 +1040,105 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
 
             if not game:GetService("UserInputService").TouchEnabled then
                 fireproximityprompt(workspace.Rendered.NPCs.Archeologist.HumanoidRootPart.MinigamePrompt)
+            end
+
+            task.wait(.5)
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Minigame.Frame.Rules.Buy.Button.Activated)
+            task.wait(.3)
+
+            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 1, 0, 1)
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content:FindFirstChild(BestPet)
+
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content[BestPet].Button.Activated) 
+            task.wait(.1)
+
+            for _,Start in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Tooltip.Frame.Buttons:GetChildren() do
+                if Start:IsA("Frame") then
+                    if Start.Button.BackgroundColor3 ~= Color3.fromRGB(251, 121, 255) then continue end
+                    
+                    firesignal(Start.Button.Activated)
+                end
+            end
+            game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.PetChoosePrompt.Frame.Body.Content.Pets.Grid.Content.UIGridLayout.CellSize = UDim2.new(0 , 100, 0, 100)
+            task.wait(3)
+        end
+    end
+end))
+table.insert(Threads, task.spawn(function() --AutoDigSite
+    while task.wait() do
+        if not Toggles.DanceOff.Value then continue end
+
+        if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD.Visible then
+            while task.wait() do
+                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD["dance-off"].Visible then break end
+
+                for _,Directions in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD["dance-off"]:GetChildren() do
+                    if not Directions.Visible then continue end
+                    if Directions.Name ~= "Directions" then continue end
+            
+            
+                    for i,v in Directions:GetChildren() do
+                        if v.Parent == nil then break end
+                        if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then 
+                            if v.Button.BackgroundTransparency ~= 0 then continue end
+                    
+                            table.insert(DanceOrder, v)
+            
+                            while task.wait() do
+                                if v.Button.BackgroundTransparency > 0 then break end
+                            end
+                        else
+                            for i2,v2 in DanceOrder do
+                                local args = {
+                                    [1] = "TryMinigameInput",
+                                    [2] = v2.Name
+                                }
+                                
+                                Remote:FireServer("TryMinigameInput", v2.Name)
+                            end
+            
+                            DanceOrder = {}
+            
+                            while task.wait() do
+                                if v.Parent == nil then break end
+                                if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then break end
+                            end
+                        end
+                    end
+                end
+            end
+
+            if Debug then
+                print("FINISHED GAME!!!")
+            end
+            task.wait(4)
+            InsideMinigame = false
+        else
+            if BossBypass then continue end
+            if WaitJoinBoss then continue end
+
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                task.wait(2)
+            end
+
+            if DataSave.GoldenTickets == 0 then continue end
+
+            local BestPet = get_minigame_pet()
+        
+            if Debug then
+                print(get_minigame_pet())
+            end
+
+            if not Toggles.DanceOff.Value then break end
+            
+            WaitJoinMinigame = true   
+            InsideMinigame = true
+
+            task.wait(.1)
+
+            if not game:GetService("UserInputService").TouchEnabled then
+                fireproximityprompt(workspace.Rendered.NPCs["Dance Champion"].HumanoidRootPart.MinigamePrompt)
             end
 
             task.wait(.5)

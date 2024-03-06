@@ -1083,7 +1083,7 @@ table.insert(Threads, task.spawn(function() --DanceOff
 
                     for i,v in Directions:GetChildren() do
                         if v.Parent == nil then break end
-                        if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then 
+                        if v.Parent.Position == UDim2.new(0, 1524, 0, 566) then 
                             if v.Button.BackgroundTransparency ~= 0 then continue end
                     
                             table.insert(DanceOrder, v)
@@ -1105,7 +1105,7 @@ table.insert(Threads, task.spawn(function() --DanceOff
 
                             while task.wait() do
                                 if v.Parent == nil then break end
-                                if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then break end
+                                if v.Parent.Position == UDim2.new(0, 1524, 0, 566) then break end
                             end
                         end
                     end
@@ -1116,7 +1116,7 @@ table.insert(Threads, task.spawn(function() --DanceOff
                 print("FINISHED GAME!!!")
             end
             task.wait(4)
-            
+
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
                 task.wait(1)

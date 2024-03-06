@@ -926,6 +926,7 @@ table.insert(Threads, task.spawn(function() --AutoBoss
                 end
             end
 
+            InsideBoss = true
             WaitJoinBoss = false
 
             repeat 
@@ -936,9 +937,12 @@ table.insert(Threads, task.spawn(function() --AutoBoss
             until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
 
             if not Toggles.AutoBoss.Value then break end
+            
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenTransition:FindFirstChild("Circle")
 
-            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
             task.wait(2)
+            firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+            InsideBoss = false
 
             break
         end
@@ -1064,7 +1068,7 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
         end
     end
 end))
-table.insert(Threads, task.spawn(function() --AutoDigSite
+table.insert(Threads, task.spawn(function() --DanceOff
     while task.wait() do
         if not Toggles.DanceOff.Value then continue end
 
@@ -1075,15 +1079,15 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 for _,Directions in game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.MinigameHUD["dance-off"]:GetChildren() do
                     if not Directions.Visible then continue end
                     if Directions.Name ~= "Directions" then continue end
-            
-            
+
+
                     for i,v in Directions:GetChildren() do
                         if v.Parent == nil then break end
                         if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then 
                             if v.Button.BackgroundTransparency ~= 0 then continue end
                     
                             table.insert(DanceOrder, v)
-            
+
                             while task.wait() do
                                 if v.Button.BackgroundTransparency > 0 then break end
                             end
@@ -1094,11 +1098,11 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                                     [2] = v2.Name
                                 }
                                 
-                                Remote:FireServer("TryMinigameInput", v2.Name)
+                                game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
                             end
-            
+
                             DanceOrder = {}
-            
+
                             while task.wait() do
                                 if v.Parent == nil then break end
                                 if v.Parent.AbsolutePosition == Vector2.new(1058.2161865234375, 226.47750854492188) then break end
@@ -1112,10 +1116,16 @@ table.insert(Threads, task.spawn(function() --AutoDigSite
                 print("FINISHED GAME!!!")
             end
             task.wait(4)
+            
+            if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
+                firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+                task.wait(1)
+            end
             InsideMinigame = false
         else
             if BossBypass then continue end
             if WaitJoinBoss then continue end
+            if InsideBoss then continue end
 
             if game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible then
                 firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)

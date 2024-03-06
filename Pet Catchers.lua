@@ -1083,15 +1083,25 @@ table.insert(Threads, task.spawn(function() --DanceOff
 
                     for i,v in Directions:GetChildren() do
                         if v.Parent == nil then break end
+                        print(v.Parent.Position)
                         if v.Parent.Position == UDim2.new(0, 1524, 0, 566) then 
                             if v.Button.BackgroundTransparency ~= 0 then continue end
                     
                             table.insert(DanceOrder, v)
 
+                            if Debug then
+                                print("INSERT: " .. v)
+                            end
+
                             while task.wait() do
                                 if v.Button.BackgroundTransparency > 0 then break end
                             end
                         else
+
+                            if Debug then
+                                print(DanceOrder)
+                            end
+
                             for i2,v2 in DanceOrder do
                                 local args = {
                                     [1] = "TryMinigameInput",

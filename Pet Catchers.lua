@@ -110,7 +110,6 @@ end
 
 function find_rare_enemy()
     local rare = nil
-    print(WorldPets)
     for i,v in WorldPets do
         if PetTable[v.Name].Rarity == "Legendary" or PetTable[v.Name].Rarity == "Secret" then
             rare = v
@@ -265,7 +264,7 @@ GeneralBox:AddToggle('AutoShrines', {
 GeneralBox:AddToggle('Godmode1', {
     Text = 'Godmode #1',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Invis Shield', -- Information shown when you hover over the toggle
+    Tooltip = 'Invis Shield [Doesnt Work on Bosses]', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -278,7 +277,7 @@ GeneralBox:AddToggle('Godmode2', {
     Callback = function(Value)
     end
 })
-local AutoChest = GeneralBox:AddButton({
+GeneralBox:AddButton({
     Text = 'Auto Chest',
     Func = function()
         for i,v in ChestTable do
@@ -327,7 +326,7 @@ PetBox:AddToggle('PrioritizeIndex', {
 PetBox:AddToggle('AutoCatch', {
     Text = 'Auto Catch',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Collects All Shrines', -- Information shown when you hover over the toggle
+    Tooltip = 'Catches for you', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -373,7 +372,7 @@ FishBox:AddToggle('AutoFishSell', {
 BossTab:AddToggle('DigsiteBoss', {
     Text = 'Support for Boss + Minigame',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Removes Kraken Attacks', -- Information shown when you hover over the toggle
+    Tooltip = 'Needed so it doesnt overlap', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -381,7 +380,7 @@ BossTab:AddToggle('DigsiteBoss', {
 BossTab:AddToggle('AutoBosslvl25', {
     Text = 'Set Max lvl 25',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+    Tooltip = 'Max lvl on bosses will only be 25', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -390,7 +389,7 @@ BossTab:AddToggle('AutoBosslvl25', {
 BossTab:AddToggle('AutoBoss', {
     Text = 'Auto Boss',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Doing bosses without touching', -- Information shown when you hover over the toggle
+    Tooltip = 'Doing bosses without doing anything', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -424,7 +423,7 @@ BossTab:AddToggle('RespawnSlime', {
 MobTab:AddToggle('TPMobs', {
     Text = 'TP to Mobs',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Teleport to mobs', -- Information shown when you hover over the toggle
+    Tooltip = 'Teleport to nearest mobs', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -434,7 +433,7 @@ MobTab:AddToggle('TPMobs', {
 BossTab:AddToggle('BossGodmode', {
     Text = 'Boss Godmode',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Only for Bosses', -- Information shown when you hover over the toggle
+    Tooltip = 'TPs so you dont get DMG', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -443,7 +442,7 @@ BossTab:AddToggle('BossGodmode', {
 MinigameBox:AddToggle('DigSite', {
     Text = 'Auto Excavation',
     Default = false, -- Default value (true / false)
-    Tooltip = '', -- Information shown when you hover over the toggle
+    Tooltip = 'Digs for you', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -451,7 +450,7 @@ MinigameBox:AddToggle('DigSite', {
 MinigameBox:AddToggle('DanceOff', {
     Text = 'Auto Dance Off',
     Default = false, -- Default value (true / false)
-    Tooltip = '', -- Information shown when you hover over the toggle
+    Tooltip = 'Pet dances for you hehe', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
     end
@@ -645,27 +644,7 @@ table.insert(Threads, task.spawn(function() --AutoCatch
         --Pet.Model.PrimaryPart.Transparency = 0.2
         --et.Model.PrimaryPart.Color = Color3.new(0,0,0)
 
-        if Toggles.PrioritizeShiny.Value then 
-            if find_shiny_enemy() then
-                Pet = find_shiny_enemy()
-                Cube = "Epic"
-                PRIO = true
-
-                if Debug then
-                    print("SHINY!!!!!!!!!!!!!!!!!!!")
-                end
-            end
-        elseif Toggles.PrioritizeRare.Value then 
-            if find_rare_enemy() then
-                Pet = find_rare_enemy()
-                Cube = get_highest_ball()
-                PRIO = true
-
-                if Debug then
-                    print("LEG / SECRET")
-                end
-            end
-        elseif Toggles.PrioritizeIndex.Value then 
+        if Toggles.PrioritizeIndex.Value then 
             if get_index_pet() then
                 Pet = get_index_pet()
                 Cube = get_highest_ball()
@@ -676,9 +655,32 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                 end
             end
         end
-        
+        if Toggles.PrioritizeShiny.Value then 
+            if find_shiny_enemy() then
+                Pet = find_shiny_enemy()
+                Cube = "Epic"
+                PRIO = true
+
+                if Debug then
+                    print("SHINY!!!!!!!!!!!!!!!!!!!")
+                end
+            end
+        end
+        if Toggles.PrioritizeRare.Value then 
+            if find_rare_enemy() then
+                Pet = find_rare_enemy()
+                Cube = get_highest_ball()
+                PRIO = true
+
+                if Debug then
+                    print("LEG / SECRET")
+                end
+            end
+        end
+
+
         while task.wait() do
-            if success or Pet.Model.Parent == nil or Toggles.AutoCatch.Value == false or STOP then break end
+            if success or Toggles.AutoCatch.Value == false or STOP then break end
 
             if not PRIO then
                 if Toggles.PrioritizeShiny.Value then 
@@ -699,6 +701,7 @@ table.insert(Threads, task.spawn(function() --AutoCatch
                     Cube = get_highest_ball()
                 end
             end
+
             success = Invoke:InvokeServer("CapturePet", Pet.GUID, Cube)
         end
 
@@ -929,19 +932,15 @@ table.insert(Threads, task.spawn(function() --AutoBoss
             InsideBoss = true
             WaitJoinBoss = false
 
-            repeat 
-                task.wait() 
-                if not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible then
-                    game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible = true
-                end
-            until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss.Value
 
-            if not Toggles.AutoBoss.Value then break end
+
+            repeat task.wait() until not game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BossHUD.Visible or not Toggles.AutoBoss.Value
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenTransition:FindFirstChild("Circle") or not Toggles.AutoBoss
+            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Visible or not Toggles.AutoBoss
             
-            repeat task.wait() until game:GetService("Players").LocalPlayer.PlayerGui.ScreenTransition:FindFirstChild("Circle")
-
             task.wait(2)
             firesignal(game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.Popup.Frame.Body.Buttons.Template.Button.Activated)
+            
             InsideBoss = false
 
             break
@@ -1081,16 +1080,15 @@ table.insert(Threads, task.spawn(function() --DanceOff
                     if Directions.Name ~= "Directions" then continue end
 
 
-                    for i,v in Directions:GetChildren() do
+                    for _,v in Directions:GetChildren() do
                         if v.Parent == nil then break end
-                        print(v.Parent.Position)
-                        if v.Parent.Position == UDim2.new(0, 1524, 0, 566) then 
+                        if not v.Button.Keybind.Visible then 
                             if v.Button.BackgroundTransparency ~= 0 then continue end
                     
                             table.insert(DanceOrder, v)
 
                             if Debug then
-                                print("INSERT: " .. v)
+                                print("INSERT: " .. v.Name)
                             end
 
                             while task.wait() do
@@ -1102,7 +1100,7 @@ table.insert(Threads, task.spawn(function() --DanceOff
                                 print(DanceOrder)
                             end
 
-                            for i2,v2 in DanceOrder do
+                            for _,v2 in DanceOrder do
                                 local args = {
                                     [1] = "TryMinigameInput",
                                     [2] = v2.Name
@@ -1115,7 +1113,7 @@ table.insert(Threads, task.spawn(function() --DanceOff
 
                             while task.wait() do
                                 if v.Parent == nil then break end
-                                if v.Parent.Position == UDim2.new(0, 1524, 0, 566) then break end
+                                if not v.Button.Keybind.Visible then break end
                             end
                         end
                     end

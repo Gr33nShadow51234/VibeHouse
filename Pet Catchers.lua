@@ -34,6 +34,7 @@ local ShrinesTable = require(game:GetService("ReplicatedStorage").Shared.Data.Sh
 local ChestTable = require(game:GetService("ReplicatedStorage").Shared.Data.Chests)
 local Fish = require(game:GetService("ReplicatedStorage").Client.Handlers.Fishing)
 local PetRender = require(game:GetService("ReplicatedStorage").Client.Pets.PetRender)
+local toSuffix = require(game:GetService("ReplicatedStorage").Shared.Framework.Utilities.String.FormatSuffix)
 local WorldPets = PetRender.WorldPets
 local PlayerChar = game.Players.LocalPlayer.Character
 local PetRarity = {"Secret","Legendary","Epic","Rare","Common"}
@@ -61,6 +62,50 @@ local WaitJoinMinigame = false
 local WaitJoinBoss = false
 local InsideMinigame = false
 local InsideBoss = false
+
+local PlayerStats = {
+    RespawnTomes = 0,
+    Tickets = 0,
+    CoinsPerMin = 0,
+    GemsPerMin = 0,
+    ["gem-trader"] = "",
+    ["magic-shop"] = "",
+    ["auburn-shop"] = "",
+    ["the-blackmarket"] = "",
+    KrakenTime = "coming",
+    SlimeTime = "coming"
+}
+local WorldStats = {
+    TotalPets = 0,
+    Common = 0,
+    Rare = 0,
+    Epic = 0,
+    Legendary = 0,
+    Shiny = 0,
+    Secret = 0
+}
+
+local lastcoins = game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\176 Coins"].Value
+game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\176 Coins"]:GetPropertyChangedSignal("Value"):Connect(function()
+    local nowcoins = game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\176 Coins"].Value
+    local difference = nowcoins - lastcoins
+    lastcoins = nowcoins
+    PlayerStats.CoinsPerMin = PlayerStats.CoinsPerMin + difference
+    task.delay(60, function()
+        PlayerStats.CoinsPerMin = PlayerStats.CoinsPerMin - difference
+    end)
+end)
+
+local lastgems = game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\142 Gems"].Value
+game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\142 Gems"]:GetPropertyChangedSignal("Value"):Connect(function()
+    local nowgems = game:GetService("Players").LocalPlayer.leaderstats["\240\159\146\142 Gems"].Value
+    local difference = nowgems - lastgems
+    lastgems = nowgems
+    PlayerStats.GemsPerMin = PlayerStats.GemsPerMin + difference
+    task.delay(60, function()
+        PlayerStats.GemsPerMin = PlayerStats.GemsPerMin - difference
+    end)
+end)
 
 -- Functions
 function find_nearest_enemy()
@@ -238,6 +283,9 @@ local CraftBox = Tabs.Main:AddRightTabbox('Crafting')
 local MinigameBox = Tabs.Main:AddRightGroupbox('Minigames')
 local MerchantBox = Tabs.Main:AddRightGroupbox('Merchants')
 
+
+local PlayerStatBox = Tabs.Stat:AddLeftGroupbox('Player Stats')
+local WorldStatBox = Tabs.Stat:AddRightGroupbox('World Stats')
 -- Group Tabs
 local CraftSlot1 = CraftBox:AddTab('Slot 1')
 local CraftSlot2 = CraftBox:AddTab('Slot 2')
@@ -596,6 +644,39 @@ MerchantBox:AddToggle('AShop', {
     end
 })
 
+
+local PlayerStatLabel = PlayerStatBox:AddLabel(
+[[
+Respawn Tomes: 42
+Tickets: 12
+--------------------------------
+Coins/per min: 12000
+Gems/per min: 400
+--------------------------------
+Blackmarket:
+Gem Trader: 
+Magic Shop:
+Auburn Shop:
+--------------------------------
+Kraken: 5min
+Slime: 12min
+]], true)
+
+local WorldStatLabel = WorldStatBox:AddLabel(
+[[
+Event: Gamer
+Desc: 1.25x more likely to get Legendary drops from Minigame
+Ends in: 1 minute
+--------------------------------
+Total Pets: 512
+Common: 124
+Rare: 421
+Epic: 21
+Legendary: 3
+Shiny: 1
+Secret: 0
+]], true)
+
 table.insert(Threads, task.spawn(function() --AutoCollect
     while task.wait() do
         if not Toggles.AutoCollect.Value then continue end
@@ -777,6 +858,8 @@ table.insert(Threads, task.spawn(function() --Godmode2
     while task.wait() do
         if not Toggles.Godmode2.Value then continue end
 
+        if not PlayerChar then continue end
+        if not PlayerChar.Humanoid then continue end
         PlayerChar.Humanoid.Health = PlayerChar.Humanoid.MaxHealth
     end
 end))
@@ -1228,6 +1311,88 @@ table.insert(Threads, task.spawn(function() --Agem-trader
     end
 end))
 
+table.insert(Threads, task.spawn(function() --Stats
+    while task.wait() do
+        PlayerStats.RespawnTomes = DataSave.Powerups["Respawn Tome"]
+        PlayerStats.Tickets = DataSave.GoldenTickets
+        WorldStats.TotalPets = 0
+        WorldStats.Common = 0
+        WorldStats.Rare = 0
+        WorldStats.Epic = 0
+        WorldStats.Legendary = 0
+        WorldStats.Shiny = 0
+        WorldStats.Secret = 0
+
+        if string.split(workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[4] == "0" then
+            PlayerStats.KrakenTime = "Spawned"
+        else
+            PlayerStats.KrakenTime = "Respawn in " .. string.split(workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[4] .. " " .. string.split(workspace.Bosses["the-kraken"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[5]
+        end
+        if string.split(workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[4] == "0" then
+            PlayerStats.SlimeTime = "Spawned"
+        else
+            PlayerStats.SlimeTime = "Respawn in " .. string.split(workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[4] .. " " .. string.split(workspace.Bosses["king-slime"].Display.SurfaceGui.BossDisplay.Cooldown.Title.Text, " ")[5]
+        end
+
+        for i,v in DataSave.Shops do
+            local nowTick = DateTime.now().UnixTimestamp
+            local futureTick = v.Began + ShopRespawn[i]
+            local tickDiff = futureTick - nowTick
+
+            local dt = tickDiff > 0 and DateTime.fromUnixTimestamp(tickDiff) or DateTime.fromUnixTimestamp(0)
+            local ut = dt:ToUniversalTime()
+
+            if ut.Hour > 0 then
+                PlayerStats[i] = string.format("%dh %dm", ut.Hour, ut.Minute)
+            elseif ut.Minute > 0 then
+                PlayerStats[i] = string.format("%dm %ds", ut.Minute, ut.Second)
+            elseif ut.Second > 0 then
+                PlayerStats[i] = string.format("%ds", ut.Second)
+            else
+                PlayerStats[i] = "Ready"
+            end
+        end
+
+        for i,v in WorldPets do 
+            local Rarity = PetTable[v.Name].Rarity
+
+            if v.Shiny then 
+                Rarity = "Shiny"
+            end
+
+            WorldStats[Rarity] += 1
+            WorldStats.TotalPets +=1
+        end
+
+pcall(function()
+        PlayerStatLabel:SetText(string.format([[
+Respawn Tomes: %d
+Tickets: %d
+--------------------------------
+Coins/per min: %s
+Gems/per min: %s
+--------------------------------
+Blackmarket: %s
+Gem Trader: %s
+Magic Shop: %s
+Auburn Shop: %s
+--------------------------------
+Kraken: %s
+Slime: %s
+]], PlayerStats.RespawnTomes, PlayerStats.Tickets, toSuffix(PlayerStats.CoinsPerMin), toSuffix(PlayerStats.GemsPerMin), PlayerStats["the-blackmarket"], PlayerStats["gem-trader"], PlayerStats["magic-shop"], PlayerStats["auburn-shop"], PlayerStats.KrakenTime, PlayerStats.SlimeTime))
+
+        WorldStatLabel:SetText(string.format([[
+Total Pets: %d
+Common: %d
+Rare: %d
+Epic: %d
+Legendary: %d
+Shiny: %d
+Secret: %d
+]], WorldStats.TotalPets, WorldStats.Common, WorldStats.Rare, WorldStats.Epic, WorldStats.Legendary, WorldStats.Shiny, WorldStats.Secret))
+end)
+    end
+end))
 Library:OnUnload(function()
     print('Unloaded!')
     Library.Unloaded = true

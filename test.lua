@@ -23,6 +23,7 @@ local Options = {};
 getgenv().Toggles = Toggles;
 getgenv().Options = Options;
 
+
 local Library = {
     Registry = {};
     RegistryMap = {};
@@ -56,6 +57,20 @@ local Library = {
     Signals = {};
     ScreenGui = ScreenGui;
 };
+-- Schritt 1: Initialisiere den Hue-Wert
+local hue1 = 0
+
+-- Schritt 2: Erstelle eine Funktion, um den Hue-Wert zu aktualisieren und die AccentColor zu setzen
+local function updateAccentColor()
+    hue1 = hue1 + 0.005 -- Passt die Geschwindigkeit des Farbwechsels an
+    if hue > 1 then hue1 = 0 end -- Setze den Hue zurück auf 0, wenn er 1 überschreitet
+
+    -- Schritt 3: Setze die neue AccentColor basierend auf dem aktuellen Hue-Wert
+    Library.AccentColor = Color3.fromHSV(hue1, 1, 1) -- Vollständige Sättigung und Helligkeit für lebendige Farben
+end
+
+-- Schritt 4: Verbinde die updateAccentColor-Funktion mit dem RenderStepped-Event
+game:GetService("RunService").RenderStepped:Connect(updateAccentColor)
 
 local RainbowStep = 0
 local Hue = 0

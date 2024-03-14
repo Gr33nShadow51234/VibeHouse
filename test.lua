@@ -35,6 +35,14 @@ local Library = {
     --AccentColor = Color3.fromHSV(counter,1,1);
     OutlineColor = Color3.fromRGB(50, 50, 50);
     RiskColor = Color3.fromRGB(255, 50, 50),
+    
+    function zigzag(X) return math.acos(math.cos(X*math.pi))/math.pi end
+
+        counter = 0
+    
+    while wait(0.1) do
+        AccentColor = Color3.fromHSV(zigzag(counter),1,1);
+    end
 
     Black = Color3.new(0, 0, 0);
     Font = Enum.Font.Code,
@@ -44,15 +52,6 @@ local Library = {
 
     Signals = {};
     ScreenGui = ScreenGui;
-    
-    local counter = 0
-    while wait(0.5) do
-        AccentColor = Color3.fromHSV(counter,1,1)
-        counter += 1/255
-        if counter >= 1 then
-            counter = 0
-        end
-    end
 };
 
 local RainbowStep = 0
